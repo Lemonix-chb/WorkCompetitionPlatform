@@ -62,7 +62,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { post } from '@/utils/api'
+import { showSuccess, showError, showWarning } from '@/utils/messageUtils'
 
 const router = useRouter()
 const route = useRoute()
@@ -93,54 +94,42 @@ onMounted(() => {
 
 const handleLogin = async () => {
   if (!form.value.username || !form.value.password) {
-    ElMessage.warning('请填写用户名和密码')
+    showWarning('请填写用户名和密码')
     return
   }
 
   loading.value = true
 
   try {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(form.value)
-    })
+    const data = await post('/auth/login', form.value)
 
-    const data = await response.json()
+    // 保存token和用户信息
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('userId', data.userId)
+    localStorage.setItem('userName', data.realName || form.value.username)
+    localStorage.setItem('userRole', data.role)
 
-    if (data.code === 200 && data.data) {
-      // 保存token和用户信息
-      localStorage.setItem('token', data.data.token)
-      localStorage.setItem('userId', data.data.userId)
-      localStorage.setItem('userName', data.data.realName || form.value.username)
-      localStorage.setItem('userRole', data.data.role)
+    showSuccess('登录成功')
 
-      ElMessage.success('登录成功')
-
-      // 获取redirect参数或根据角色跳转
-      const redirect = route.query.redirect
-      if (redirect) {
-        router.push(redirect)
-      } else {
-        // 根据角色跳转到对应主页（角色为大写的STUDENT/JUDGE/ADMIN）
-        if (data.data.role === 'STUDENT') {
-          router.push('/student')
-        } else if (data.data.role === 'JUDGE') {
-          router.push('/judge')
-        } else if (data.data.role === 'ADMIN') {
-          router.push('/admin')
-        } else {
-          router.push('/')
-        }
-      }
+    // 获取redirect参数或根据角色跳转
+    const redirect = route.query.redirect
+    if (redirect) {
+      router.push(redirect)
     } else {
-      ElMessage.error(data.message || '登录失败')
+      // 根据角色跳转到对应主页（角色为大写的STUDENT/JUDGE/ADMIN）
+      if (data.role === 'STUDENT') {
+        router.push('/student')
+      } else if (data.role === 'JUDGE') {
+        router.push('/judge')
+      } else if (data.role === 'ADMIN') {
+        router.push('/admin')
+      } else {
+        router.push('/')
+      }
     }
   } catch (error) {
     console.error('Login error:', error)
-    ElMessage.error('登录失败，请检查网络连接')
+    showError('登录失败，请检查网络连接')
   } finally {
     loading.value = false
   }

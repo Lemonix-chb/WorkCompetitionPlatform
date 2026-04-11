@@ -1,0 +1,1 @@
+import{E as o,A as t}from"./index-DAuC7rpw.js";function c(n){o.success(n)}function e(n){o.error(n)}function i(n){o.warning(n)}function f(n){o.info(n)}function u(n,s="提示",r={}){return t.confirm(n,s,{confirmButtonText:"确定",cancelButtonText:"取消",type:"warning",...r})}export{i as a,e as b,u as c,f as d,c as s};

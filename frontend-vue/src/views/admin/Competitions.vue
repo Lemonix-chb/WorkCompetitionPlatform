@@ -230,7 +230,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { get, post, put } from '@/utils/api'
+import { formatDateTime } from '@/utils/dateUtils'
+import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
 
 const router = useRouter()
 
@@ -271,31 +273,19 @@ const fetchCompetitions = async () => {
   loading.value = true
 
   try {
-    const token = localStorage.getItem('token')
-    const params = new URLSearchParams({
+    const params = {
       current: pagination.current,
       size: pagination.size
-    })
-
-    if (filters.year) params.append('year', filters.year)
-    if (filters.status) params.append('status', filters.status)
-
-    const response = await fetch(`/api/competitions?${params.toString()}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      competitions.value = data.data.records || []
-      pagination.total = data.data.total || 0
-    } else {
-      ElMessage.error(data.message || '获取赛事列表失败')
     }
+
+    if (filters.year) params.year = filters.year
+    if (filters.status) params.status = filters.status
+
+    const data = await get('/competitions', params)
+    competitions.value = data.records || []
+    pagination.total = data.total || 0
   } catch (error) {
-    ElMessage.error('获取赛事列表失败')
+    showError('获取赛事列表失败')
   } finally {
     loading.value = false
   }
@@ -329,33 +319,20 @@ const editCompetition = (comp) => {
   showDialog.value = true
 }
 
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return ''
-  // 如果已经是字符串格式，直接返回
-  if (typeof dateStr === 'string') return dateStr
-  // 如果是Date对象或时间戳，转换为字符串
-  const date = new Date(dateStr)
-  return date.toISOString().slice(0, 19).replace('T', ' ')
-}
-
 const handleSubmit = async () => {
   if (!competitionForm.competitionName) {
-    ElMessage.warning('请填写赛事名称')
+    showWarning('请填写赛事名称')
     return
   }
 
   if (!competitionForm.registrationPeriod || competitionForm.registrationPeriod.length < 2) {
-    ElMessage.warning('请选择报名时间')
+    showWarning('请选择报名时间')
     return
   }
 
   submitting.value = true
 
   try {
-    const token = localStorage.getItem('token')
-    const url = isEdit.value ? `/api/competitions/${competitionForm.id}` : '/api/competitions'
-    const method = isEdit.value ? 'PUT' : 'POST'
-
     const body = {
       competitionName: competitionForm.competitionName,
       competitionYear: competitionForm.competitionYear,
@@ -374,31 +351,19 @@ const handleSubmit = async () => {
 
     if (isEdit.value) {
       body.id = competitionForm.id
-      // 编辑时不修改状态
       delete body.status
-    }
-
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success(isEdit.value ? '赛事更新成功' : '赛事创建成功')
-      showDialog.value = false
-      await fetchCompetitions()
+      await put(`/competitions/${competitionForm.id}`, body)
+      showSuccess('赛事更新成功')
     } else {
-      ElMessage.error(data.message || '操作失败')
+      await post('/competitions', body)
+      showSuccess('赛事创建成功')
     }
+
+    showDialog.value = false
+    await fetchCompetitions()
   } catch (error) {
     console.error('提交错误:', error)
-    ElMessage.error('操作失败')
+    showError('操作失败')
   } finally {
     submitting.value = false
   }
@@ -406,105 +371,42 @@ const handleSubmit = async () => {
 
 const publishCompetition = async (comp) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要发布赛事 "${comp.competitionName}" 吗？`,
-      '发布赛事',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(`确定要发布赛事 "${comp.competitionName}" 吗？`, '发布赛事')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/competitions/${comp.id}/publish`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('赛事发布成功')
-      await fetchCompetitions()
-    } else {
-      ElMessage.error(data.message || '发布失败')
-    }
+    await post(`/competitions/${comp.id}/publish`)
+    showSuccess('赛事发布成功')
+    await fetchCompetitions()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('发布失败')
+      showError('发布失败')
     }
   }
 }
 
 const startCompetition = async (comp) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要开始赛事 "${comp.competitionName}" 吗？`,
-      '开始赛事',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(`确定要开始赛事 "${comp.competitionName}" 吗？`, '开始赛事')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/competitions/${comp.id}/start`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('赛事已开始')
-      await fetchCompetitions()
-    } else {
-      ElMessage.error(data.message || '开始失败')
-    }
+    await post(`/competitions/${comp.id}/start`)
+    showSuccess('赛事已开始')
+    await fetchCompetitions()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('开始失败')
+      showError('开始失败')
     }
   }
 }
 
 const finishCompetition = async (comp) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要结束赛事 "${comp.competitionName}" 吗？`,
-      '结束赛事',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(`确定要结束赛事 "${comp.competitionName}" 吗？`, '结束赛事')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/competitions/${comp.id}/finish`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('赛事已结束')
-      await fetchCompetitions()
-    } else {
-      ElMessage.error(data.message || '结束失败')
-    }
+    await post(`/competitions/${comp.id}/finish`)
+    showSuccess('赛事已结束')
+    await fetchCompetitions()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('结束失败')
+      showError('结束失败')
     }
   }
 }

@@ -265,6 +265,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { get, post, put, del, postForm } from '@/utils/api'
+import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
+import { formatDateTime } from '@/utils/dateUtils'
 
 const works = ref([])
 const teams = ref([])
@@ -309,7 +312,7 @@ onMounted(async () => {
   const role = localStorage.getItem('userRole')
 
   if (!token || role !== 'STUDENT') {
-    ElMessage.warning('您没有权限访问此页面')
+    showWarning('您没有权限访问此页面')
     return
   }
 
@@ -327,19 +330,15 @@ onMounted(async () => {
 const fetchWorks = async () => {
   loading.value = true
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/works/my', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get('/works/my')
 
     if (data.code === 200) {
       works.value = data.data || []
     } else {
-      ElMessage.error(data.message || '获取作品列表失败')
+      showError(data.message || '获取作品列表失败')
     }
   } catch (error) {
-    ElMessage.error('获取作品列表失败')
+    showError('获取作品列表失败')
   } finally {
     loading.value = false
   }
@@ -347,11 +346,7 @@ const fetchWorks = async () => {
 
 const fetchTeams = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/teams/my', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get('/teams/my')
 
     if (data.code === 200) {
       teams.value = data.data || []
@@ -363,11 +358,7 @@ const fetchTeams = async () => {
 
 const fetchWorkAttachments = async (workId) => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/upload/work/${workId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get(`/upload/work/${workId}`)
 
     if (data.code === 200) {
       workAttachments.value[workId] = data.data || []
@@ -399,34 +390,27 @@ const handleFileSelect = (event) => {
 
 const handleUploadFile = async () => {
   if (!uploadForm.value.file) {
-    ElMessage.warning('请选择文件')
+    showWarning('请选择文件')
     return
   }
 
   uploading.value = true
   try {
-    const token = localStorage.getItem('token')
     const formData = new FormData()
     formData.append('file', uploadForm.value.file)
     formData.append('attachmentType', uploadForm.value.attachmentType)
 
-    const response = await fetch(`/api/upload/work/${uploadForm.value.workId}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: formData
-    })
-
-    const data = await response.json()
+    const data = await postForm(`/upload/work/${uploadForm.value.workId}`, formData)
 
     if (data.code === 200) {
-      ElMessage.success('文件上传成功')
+      showSuccess('文件上传成功')
       showUploadFileDialog.value = false
       await fetchWorkAttachments(uploadForm.value.workId)
     } else {
-      ElMessage.error(data.message || '上传失败')
+      showError(data.message || '上传失败')
     }
   } catch (error) {
-    ElMessage.error('上传失败')
+    showError('上传失败')
   } finally {
     uploading.value = false
   }
@@ -434,33 +418,19 @@ const handleUploadFile = async () => {
 
 const deleteAttachment = async (attachment) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要删除文件 ${attachment.fileName} 吗？`,
-      '删除文件',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(`确定要删除文件 ${attachment.fileName} 吗？`, '删除文件')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/upload/${attachment.id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await del(`/upload/${attachment.id}`)
 
     if (data.code === 200) {
-      ElMessage.success('文件已删除')
+      showSuccess('文件已删除')
       await fetchWorkAttachments(attachment.workId)
     } else {
-      ElMessage.error(data.message || '删除失败')
+      showError(data.message || '删除失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      showError('删除失败')
     }
   }
 }
@@ -493,17 +463,16 @@ const handleTeamChange = (teamId) => {
 
 const handleCreateWork = async () => {
   if (!createWorkForm.value.workName) {
-    ElMessage.warning('请输入作品名称')
+    showWarning('请输入作品名称')
     return
   }
   if (!createWorkForm.value.teamId) {
-    ElMessage.warning('请选择团队')
+    showWarning('请选择团队')
     return
   }
 
   creating.value = true
   try {
-    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       workName: createWorkForm.value.workName,
       teamId: createWorkForm.value.teamId,
@@ -511,22 +480,17 @@ const handleCreateWork = async () => {
       trackId: createWorkForm.value.trackId
     })
 
-    const response = await fetch(`/api/works?${params.toString()}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/works?${params.toString()}`)
 
     if (data.code === 200) {
-      ElMessage.success('作品创建成功')
+      showSuccess('作品创建成功')
       showCreateWorkDialog.value = false
       await fetchWorks()
     } else {
-      ElMessage.error(data.message || '创建作品失败')
+      showError(data.message || '创建作品失败')
     }
   } catch (error) {
-    ElMessage.error('创建作品失败')
+    showError('创建作品失败')
   } finally {
     creating.value = false
   }
@@ -549,13 +513,12 @@ const editWork = (work) => {
 
 const handleUpdateWork = async () => {
   if (!editWorkForm.value.workName) {
-    ElMessage.warning('请输入作品名称')
+    showWarning('请输入作品名称')
     return
   }
 
   updating.value = true
   try {
-    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       workName: editWorkForm.value.workName,
       description: editWorkForm.value.description,
@@ -566,22 +529,17 @@ const handleUpdateWork = async () => {
       targetUsers: editWorkForm.value.targetUsers
     })
 
-    const response = await fetch(`/api/works/${editWorkForm.value.id}?${params.toString()}`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await put(`/works/${editWorkForm.value.id}?${params.toString()}`)
 
     if (data.code === 200) {
-      ElMessage.success('作品信息已更新')
+      showSuccess('作品信息已更新')
       showEditWorkDialog.value = false
       await fetchWorks()
     } else {
-      ElMessage.error(data.message || '更新作品失败')
+      showError(data.message || '更新作品失败')
     }
   } catch (error) {
-    ElMessage.error('更新作品失败')
+    showError('更新作品失败')
   } finally {
     updating.value = false
   }
@@ -589,33 +547,19 @@ const handleUpdateWork = async () => {
 
 const markCompleted = async (work) => {
   try {
-    await ElMessageBox.confirm(
-      '确定要将作品标记为已完成吗？标记后将可以提交评审。',
-      '标记完成',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    )
+    await showConfirm('确定要将作品标记为已完成吗？标记后将可以提交评审。', '标记完成')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/works/${work.id}/complete`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/works/${work.id}/complete`)
 
     if (data.code === 200) {
-      ElMessage.success('作品已标记为完成')
+      showSuccess('作品已标记为完成')
       await fetchWorks()
     } else {
-      ElMessage.error(data.message || '标记完成失败')
+      showError(data.message || '标记完成失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('标记完成失败')
+      showError('标记完成失败')
     }
   }
 }
@@ -627,33 +571,19 @@ const submitWork = async (work) => {
       ? '重新提交作品将更新评审信息，之前的评审任务将被取消。确定要重新提交吗？'
       : '提交作品后将进入评审流程，确定要提交吗？'
 
-    await ElMessageBox.confirm(
-      message,
-      isResubmit ? '重新提交作品' : '提交作品',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(message, isResubmit ? '重新提交作品' : '提交作品')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/works/${work.id}/submit`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/works/${work.id}/submit`)
 
     if (data.code === 200) {
-      ElMessage.success(isResubmit ? '作品已重新提交' : '作品已提交')
+      showSuccess(isResubmit ? '作品已重新提交' : '作品已提交')
       await fetchWorks()
     } else {
-      ElMessage.error(data.message || '提交作品失败')
+      showError(data.message || '提交作品失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('提交作品失败')
+      showError('提交作品失败')
     }
   }
 }
@@ -686,8 +616,7 @@ const getWorkTypeText = (type) => {
 }
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
+  return formatDateTime(dateStr)
 }
 </script>
 

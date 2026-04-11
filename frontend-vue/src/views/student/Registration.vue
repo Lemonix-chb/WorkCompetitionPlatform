@@ -198,6 +198,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useCompetitionStore } from '../../stores/competition'
+import { get, post } from '@/utils/api'
+import { showSuccess, showError, showWarning } from '@/utils/messageUtils'
+import { formatDateTime } from '@/utils/dateUtils'
 
 const router = useRouter()
 const store = useCompetitionStore()
@@ -218,7 +221,7 @@ onMounted(async () => {
   const role = localStorage.getItem('userRole')
 
   if (!token || role !== 'STUDENT') {
-    ElMessage.warning('您没有权限访问此页面')
+    showWarning('您没有权限访问此页面')
     router.push('/login')
     return
   }
@@ -231,13 +234,7 @@ onMounted(async () => {
 
 const fetchMyRegistrations = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/registrations/my', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    const data = await response.json()
+    const data = await get('/registrations/my')
 
     if (data.code === 200) {
       userRegistrations.value = data.data || []
@@ -249,36 +246,29 @@ const fetchMyRegistrations = async () => {
 
 const fetchTracks = async (competitionId) => {
   try {
-    const response = await fetch(`/api/competitions/${competitionId}/tracks`)
-    const data = await response.json()
+    const data = await get(`/competitions/${competitionId}/tracks`)
 
     if (data.code === 200) {
       tracks.value = data.data || []
     } else {
-      ElMessage.error('获取赛道失败')
+      showError('获取赛道失败')
     }
   } catch (error) {
-    ElMessage.error('获取赛道失败')
+    showError('获取赛道失败')
   }
 }
 
 const fetchUserTeams = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/teams/my', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    const data = await response.json()
+    const data = await get('/teams/my')
 
     if (data.code === 200) {
       userTeams.value = data.data || []
     } else {
-      ElMessage.error('获取团队失败')
+      showError('获取团队失败')
     }
   } catch (error) {
-    ElMessage.error('获取团队失败')
+    showError('获取团队失败')
   }
 }
 
@@ -304,39 +294,31 @@ const selectTeam = (teamId) => {
 
 const confirmRegistration = async () => {
   if (!selectedTrackId.value || !selectedTeamId.value) {
-    ElMessage.warning('请选择赛道和团队')
+    showWarning('请选择赛道和团队')
     return
   }
 
   registering.value = true
 
   try {
-    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       competitionId: selectedCompetition.value.id,
       trackId: selectedTrackId.value,
       teamId: selectedTeamId.value
     })
 
-    const response = await fetch(`/api/registrations?${params.toString()}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
+    const data = await post(`/registrations?${params.toString()}`)
 
     if (data.code === 200) {
-      ElMessage.success('报名成功！')
+      showSuccess('报名成功！')
       showRegistrationDialog.value = false
       await fetchMyRegistrations()
       router.push('/student/teams')
     } else {
-      ElMessage.error(data.message || '报名失败')
+      showError(data.message || '报名失败')
     }
   } catch (error) {
-    ElMessage.error('报名失败，请稍后重试')
+    showError('报名失败，请稍后重试')
   } finally {
     registering.value = false
   }
@@ -383,8 +365,7 @@ const getTeamStatusText = (status) => {
 }
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
+  return formatDateTime(dateStr)
 }
 
 const canRegister = (comp) => {

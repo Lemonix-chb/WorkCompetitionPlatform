@@ -70,6 +70,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { get } from '@/utils/api'
+import { showSuccess, showError } from '@/utils/messageUtils'
 
 const router = useRouter()
 
@@ -106,9 +108,9 @@ const handleUpdate = async () => {
 
   try {
     // TODO: 实现更新用户信息API
-    ElMessage.success('个人信息更新成功（功能开发中）')
+    showSuccess('个人信息更新成功（功能开发中）')
   } catch (error) {
-    ElMessage.error('更新失败')
+    showError('更新失败')
   } finally {
     loading.value = false
   }
@@ -116,8 +118,7 @@ const handleUpdate = async () => {
 
 const fetchProfile = async () => {
   try {
-    const response = await fetch('/api/user/profile')
-    const data = await response.json()
+    const data = await get('/user/profile')
     if (data.code === 200) {
       profile.value = data.data
     }

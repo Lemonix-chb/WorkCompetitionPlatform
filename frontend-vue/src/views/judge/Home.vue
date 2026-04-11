@@ -141,7 +141,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { get } from '@/utils/api'
+import { showWarning } from '@/utils/messageUtils'
 
 const router = useRouter()
 
@@ -164,7 +165,7 @@ onMounted(async () => {
   }
 
   if (role !== 'JUDGE') {
-    ElMessage.warning('您没有权限访问评审员页面')
+    showWarning('您没有权限访问评审员页面')
     router.push('/login')
     return
   }
@@ -175,11 +176,8 @@ onMounted(async () => {
 const fetchStats = async () => {
   try {
     // TODO: 实现评审员统计API
-    // const response = await fetch('/api/judge/stats')
-    // const data = await response.json()
-    // if (data.code === 200) {
-    //   stats.value = data.data
-    // }
+    // const data = await get('/judge/stats')
+    // stats.value = data
   } catch (error) {
     console.error('获取统计数据失败', error)
   }

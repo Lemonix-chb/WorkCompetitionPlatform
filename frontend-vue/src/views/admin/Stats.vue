@@ -28,7 +28,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { showWarning } from '@/utils/messageUtils'
 
 const router = useRouter()
 
@@ -37,7 +37,7 @@ onMounted(async () => {
   const role = localStorage.getItem('userRole')
 
   if (!token || role !== 'ADMIN') {
-    ElMessage.warning('您没有权限访问此页面')
+    showWarning('您没有权限访问此页面')
     router.push('/login')
   }
 })

@@ -151,7 +151,7 @@
 import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCompetitionStore } from '../stores/competition'
-import { ElMessage } from 'element-plus'
+import { showSuccess } from '@/utils/messageUtils'
 
 const router = useRouter()
 const route = useRoute()
@@ -175,11 +175,11 @@ const getTrackTypeText = (type) => {
 const selectTrack = (track) => {
   const token = localStorage.getItem('token')
   if (!token) {
-    ElMessage.info('请先登录后报名参赛')
+    showSuccess('请先登录后报名参赛')
     router.push(`/login?redirect=/competitions/${route.params.id}/tracks`)
     return
   }
-  ElMessage.success(`已选择${track.trackName}赛道`)
+  showSuccess(`已选择${track.trackName}赛道`)
   // TODO: 跳转到报名页面
 }
 </script>

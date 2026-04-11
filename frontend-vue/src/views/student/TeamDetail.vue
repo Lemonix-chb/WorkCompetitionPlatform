@@ -177,6 +177,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { get, post, del } from '@/utils/api'
+import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
+import { formatDateTime } from '@/utils/dateUtils'
 
 const router = useRouter()
 const route = useRoute()
@@ -210,43 +213,31 @@ onMounted(async () => {
 
 const fetchTeamDetail = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/${teamId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    const data = await response.json()
+    const data = await get(`/teams/${teamId}`)
 
     if (data.code === 200) {
       team.value = data.data
     } else {
-      ElMessage.error(data.message || '获取团队信息失败')
+      showError(data.message || '获取团队信息失败')
       router.push('/student/teams')
     }
   } catch (error) {
-    ElMessage.error('获取团队信息失败')
+    showError('获取团队信息失败')
     router.push('/student/teams')
   }
 }
 
 const fetchTeamMembers = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/${teamId}/members`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    const data = await response.json()
+    const data = await get(`/teams/${teamId}/members`)
 
     if (data.code === 200) {
       members.value = data.data || []
     } else {
-      ElMessage.error(data.message || '获取团队成员失败')
+      showError(data.message || '获取团队成员失败')
     }
   } catch (error) {
-    ElMessage.error('获取团队成员失败')
+    showError('获取团队成员失败')
   }
 }
 
@@ -256,36 +247,28 @@ const showInviteDialog = () => {
 
 const handleInviteMember = async () => {
   if (!inviteForm.value.invitedUserId) {
-    ElMessage.warning('请输入被邀请用户的ID')
+    showWarning('请输入被邀请用户的ID')
     return
   }
 
   inviteLoading.value = true
 
   try {
-    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       invitedUserId: inviteForm.value.invitedUserId
     })
 
-    const response = await fetch(`/api/teams/${teamId}/invite?${params.toString()}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/${teamId}/invite?${params.toString()}`)
 
     if (data.code === 200) {
-      ElMessage.success('邀请已发送')
+      showSuccess('邀请已发送')
       showInviteMemberDialog.value = false
       inviteForm.value = { invitedUserId: '', invitedStudentNo: '' }
     } else {
-      ElMessage.error(data.message || '邀请失败')
+      showError(data.message || '邀请失败')
     }
   } catch (error) {
-    ElMessage.error('邀请失败，请检查网络连接')
+    showError('邀请失败，请检查网络连接')
   } finally {
     inviteLoading.value = false
   }
@@ -293,106 +276,58 @@ const handleInviteMember = async () => {
 
 const removeMember = async (member) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要移除成员 ${member.realName} 吗？`,
-      '移除成员',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(`确定要移除成员 ${member.realName} 吗？`, '移除成员')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/${teamId}/members/${member.userId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
+    const data = await del(`/teams/${teamId}/members/${member.userId}`)
 
     if (data.code === 200) {
-      ElMessage.success('成员已移除')
+      showSuccess('成员已移除')
       await fetchTeamMembers()
       await fetchTeamDetail()
     } else {
-      ElMessage.error(data.message || '移除失败')
+      showError(data.message || '移除失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('移除失败')
+      showError('移除失败')
     }
   }
 }
 
 const confirmTeam = async () => {
   try {
-    await ElMessageBox.confirm(
-      '确认团队后，团队状态将变为已确认。确定要确认团队吗？',
-      '确认团队',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm('确认团队后，团队状态将变为已确认。确定要确认团队吗？', '确认团队')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/${teamId}/confirm`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/${teamId}/confirm`)
 
     if (data.code === 200) {
-      ElMessage.success('团队已确认')
+      showSuccess('团队已确认')
       await fetchTeamDetail()
     } else {
-      ElMessage.error(data.message || '确认失败')
+      showError(data.message || '确认失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('确认失败')
+      showError('确认失败')
     }
   }
 }
 
 const quitTeam = async () => {
   try {
-    await ElMessageBox.confirm(
-      '退出团队后，您将不再是团队成员。确定要退出吗？',
-      '退出团队',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm('退出团队后，您将不再是团队成员。确定要退出吗？', '退出团队')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/${teamId}/quit`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/${teamId}/quit`)
 
     if (data.code === 200) {
-      ElMessage.success('已退出团队')
+      showSuccess('已退出团队')
       router.push('/student/teams')
     } else {
-      ElMessage.error(data.message || '退出失败')
+      showError(data.message || '退出失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('退出失败')
+      showError('退出失败')
     }
   }
 }
@@ -409,25 +344,17 @@ const dissolveTeam = async () => {
       }
     )
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/${teamId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
+    const data = await del(`/teams/${teamId}`)
 
     if (data.code === 200) {
-      ElMessage.success('团队已解散')
+      showSuccess('团队已解散')
       router.push('/student/teams')
     } else {
-      ElMessage.error(data.message || '解散失败')
+      showError(data.message || '解散失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('解散失败')
+      showError('解散失败')
     }
   }
 }
@@ -460,8 +387,7 @@ const getStatusText = (status) => {
 }
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
+  return formatDateTime(dateStr)
 }
 </script>
 

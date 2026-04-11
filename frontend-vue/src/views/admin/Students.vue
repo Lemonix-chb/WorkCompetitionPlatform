@@ -281,7 +281,8 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { get, post, put } from '@/utils/api'
+import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
 
 const students = ref([])
 const loading = ref(false)
@@ -332,32 +333,20 @@ const fetchStudents = async () => {
   loading.value = true
 
   try {
-    const token = localStorage.getItem('token')
-    const params = new URLSearchParams({
+    const params = {
       current: pagination.current,
       size: pagination.size,
       role: 'STUDENT'
-    })
-
-    if (filters.keyword) params.append('keyword', filters.keyword)
-    if (filters.status) params.append('status', filters.status)
-
-    const response = await fetch(`/api/users?${params.toString()}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      students.value = data.data.records || []
-      pagination.total = data.data.total || 0
-    } else {
-      ElMessage.error(data.message || '获取参赛者列表失败')
     }
+
+    if (filters.keyword) params.keyword = filters.keyword
+    if (filters.status) params.status = filters.status
+
+    const data = await get('/users', params)
+    students.value = data.records || []
+    pagination.total = data.total || 0
   } catch (error) {
-    ElMessage.error('获取参赛者列表失败')
+    showError('获取参赛者列表失败')
   } finally {
     loading.value = false
   }
@@ -383,34 +372,20 @@ const submitEdit = async () => {
   submitting.value = true
 
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/users/${editForm.id}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        studentNo: editForm.studentNo,
-        realName: editForm.realName,
-        email: editForm.email,
-        phone: editForm.phone,
-        major: editForm.major,
-        college: editForm.college
-      })
+    await put(`/users/${editForm.id}`, {
+      studentNo: editForm.studentNo,
+      realName: editForm.realName,
+      email: editForm.email,
+      phone: editForm.phone,
+      major: editForm.major,
+      college: editForm.college
     })
 
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('参赛者信息更新成功')
-      showEditDialog.value = false
-      await fetchStudents()
-    } else {
-      ElMessage.error(data.message || '更新失败')
-    }
+    showSuccess('参赛者信息更新成功')
+    showEditDialog.value = false
+    await fetchStudents()
   } catch (error) {
-    ElMessage.error('更新失败')
+    showError('更新失败')
   } finally {
     submitting.value = false
   }
@@ -430,34 +405,20 @@ const openAddDialog = () => {
 
 const submitAdd = async () => {
   if (!addForm.username || !addForm.password || !addForm.realName || !addForm.studentNo || !addForm.email) {
-    ElMessage.warning('请填写所有必填项')
+    showWarning('请填写所有必填项')
     return
   }
 
   submitting.value = true
 
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(addForm)
-    })
+    await post('/auth/register', addForm)
 
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('学生创建成功')
-      showAddDialog.value = false
-      await fetchStudents()
-    } else {
-      ElMessage.error(data.message || '创建失败')
-    }
+    showSuccess('学生创建成功')
+    showAddDialog.value = false
+    await fetchStudents()
   } catch (error) {
-    ElMessage.error('创建失败')
+    showError('创建失败')
   } finally {
     submitting.value = false
   }
@@ -465,105 +426,42 @@ const submitAdd = async () => {
 
 const approveStudent = async (student) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要审核通过学生 "${student.realName}" 吗？`,
-      '审核学生',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(`确定要审核通过学生 "${student.realName}" 吗？`, '审核学生')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/users/${student.id}/status?status=ACTIVE`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('审核成功')
-      await fetchStudents()
-    } else {
-      ElMessage.error(data.message || '审核失败')
-    }
+    await put(`/users/${student.id}/status?status=ACTIVE`)
+    showSuccess('审核成功')
+    await fetchStudents()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('审核失败')
+      showError('审核失败')
     }
   }
 }
 
 const disableStudent = async (student) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要禁用学生 "${student.realName}" 吗？`,
-      '禁用学生',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(`确定要禁用学生 "${student.realName}" 吗？`, '禁用学生')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/users/${student.id}/status?status=INACTIVE`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('学生已禁用')
-      await fetchStudents()
-    } else {
-      ElMessage.error(data.message || '禁用失败')
-    }
+    await put(`/users/${student.id}/status?status=INACTIVE`)
+    showSuccess('学生已禁用')
+    await fetchStudents()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('禁用失败')
+      showError('禁用失败')
     }
   }
 }
 
 const activateStudent = async (student) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要激活学生 "${student.realName}" 吗？`,
-      '激活学生',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm(`确定要激活学生 "${student.realName}" 吗？`, '激活学生')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/users/${student.id}/status?status=ACTIVE`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('学生已激活')
-      await fetchStudents()
-    } else {
-      ElMessage.error(data.message || '激活失败')
-    }
+    await put(`/users/${student.id}/status?status=ACTIVE`)
+    showSuccess('学生已激活')
+    await fetchStudents()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('激活失败')
+      showError('激活失败')
     }
   }
 }

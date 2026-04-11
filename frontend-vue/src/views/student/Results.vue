@@ -36,6 +36,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { get } from '@/utils/api'
+import { showError, showInfo } from '@/utils/messageUtils'
 
 const router = useRouter()
 const results = ref([])
@@ -51,17 +53,17 @@ onMounted(async () => {
 })
 
 const viewDetail = (result) => {
-  ElMessage.info('详情功能开发中...')
+  showInfo('详情功能开发中...')
 }
 
 const fetchResults = async () => {
   try {
-    const response = await fetch('/api/student/results')
-    const data = await response.json()
+    const data = await get('/student/results')
     if (data.code === 200) {
       results.value = data.data || []
     }
   } catch (error) {
+    showError('获取成绩失败')
     console.error('获取成绩失败', error)
   }
 }

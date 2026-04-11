@@ -164,7 +164,7 @@
               </div>
               <div class="info-row">
                 <span class="info-label caption">过期时间</span>
-                <span class="info-value caption">{{ formatDate(invitation.expireTime) }}</span>
+                <span class="info-value caption">{{ formatDateTime(invitation.expireTime) }}</span>
               </div>
             </div>
 
@@ -184,7 +184,7 @@
 
             <!-- Processed Status -->
             <div v-else class="invitation-processed caption">
-              {{ invitation.status === 'ACCEPTED' ? '已接受' : '已拒绝' }} · {{ formatDate(invitation.processTime) }}
+              {{ invitation.status === 'ACCEPTED' ? '已接受' : '已拒绝' }} · {{ formatDateTime(invitation.processTime) }}
             </div>
           </div>
         </div>
@@ -299,7 +299,7 @@
               <div class="application-info">
                 <div class="info-row">
                   <span class="info-label caption">申请时间</span>
-                  <span class="info-value caption">{{ formatDate(application.createTime) }}</span>
+                  <span class="info-value caption">{{ formatDateTime(application.createTime) }}</span>
                 </div>
               </div>
 
@@ -496,7 +496,7 @@
                     <span v-if="application.message">申请理由：{{ application.message }}</span>
                   </div>
                   <div class="applicant-time caption">
-                    申请时间：{{ formatDate(application.createTime) }}
+                    申请时间：{{ formatDateTime(application.createTime) }}
                   </div>
                 </div>
               </div>
@@ -531,6 +531,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { get, post, del } from '@/utils/api'
+import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
+import { formatDateTime } from '@/utils/dateUtils'
 
 const router = useRouter()
 
@@ -586,26 +589,21 @@ onMounted(async () => {
 
 const fetchTeams = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/teams/my', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get('/teams/my')
 
     if (data.code === 200) {
       teams.value = data.data || []
     } else {
-      ElMessage.error(data.message || '获取团队列表失败')
+      showError(data.message || '获取团队列表失败')
     }
   } catch (error) {
-    ElMessage.error('获取团队列表失败')
+    showError('获取团队列表失败')
   }
 }
 
 const fetchTracks = async () => {
   try {
-    const response = await fetch('/api/competitions/1/tracks')
-    const data = await response.json()
+    const data = await get('/competitions/1/tracks')
 
     if (data.code === 200) {
       tracks.value = data.data || []
@@ -617,11 +615,7 @@ const fetchTracks = async () => {
 
 const fetchInvitations = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/teams/invitations/pending', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get('/teams/invitations/pending')
 
     if (data.code === 200) {
       invitations.value = data.data || []
@@ -633,11 +627,7 @@ const fetchInvitations = async () => {
 
 const fetchMyApplications = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/teams/applications/my', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get('/teams/applications/my')
 
     if (data.code === 200) {
       myApplications.value = data.data || []
@@ -654,39 +644,33 @@ const showCreateDialog = () => {
 
 const handleCreateTeam = async () => {
   if (!createTeamForm.value.teamName) {
-    ElMessage.warning('请输入团队名称')
+    showWarning('请输入团队名称')
     return
   }
   if (!createTeamForm.value.competitionTrackId) {
-    ElMessage.warning('请选择赛道')
+    showWarning('请选择赛道')
     return
   }
 
   loading.value = true
 
   try {
-    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       teamName: createTeamForm.value.teamName,
       competitionTrackId: createTeamForm.value.competitionTrackId
     })
 
-    const response = await fetch(`/api/teams?${params.toString()}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams?${params.toString()}`)
 
     if (data.code === 200) {
-      ElMessage.success('团队创建成功')
+      showSuccess('团队创建成功')
       showCreateTeamDialog.value = false
       await fetchTeams()
     } else {
-      ElMessage.error(data.message || '创建团队失败')
+      showError(data.message || '创建团队失败')
     }
   } catch (error) {
-    ElMessage.error('创建团队失败')
+    showError('创建团队失败')
   } finally {
     loading.value = false
   }
@@ -712,19 +696,15 @@ const showTeamApplications = async (team) => {
 
 const fetchTeamApplications = async (teamId) => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/${teamId}/applications/pending`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get(`/teams/${teamId}/applications/pending`)
 
     if (data.code === 200) {
       teamApplications.value = data.data || []
     } else {
-      ElMessage.error(data.message || '获取申请列表失败')
+      showError(data.message || '获取申请列表失败')
     }
   } catch (error) {
-    ElMessage.error('获取申请列表失败')
+    showError('获取申请列表失败')
   }
 }
 
@@ -735,23 +715,17 @@ const getApplicantName = (application) => {
 
 const acceptApplication = async (application) => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/applications/${application.id}/accept`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/applications/${application.id}/accept`)
 
     if (data.code === 200) {
-      ElMessage.success('已接受申请')
+      showSuccess('已接受申请')
       await fetchTeamApplications(selectedTeam.value.id)
       await fetchTeams()
     } else {
-      ElMessage.error(data.message || '接受申请失败')
+      showError(data.message || '接受申请失败')
     }
   } catch (error) {
-    ElMessage.error('接受申请失败')
+    showError('接受申请失败')
   }
 }
 
@@ -765,28 +739,21 @@ const rejectApplication = async (application) => {
     })
 
     const reason = ElMessageBox.prompt.inputValue || ''
-    const token = localStorage.getItem('token')
-
     const params = new URLSearchParams({
       responseReason: reason
     })
 
-    const response = await fetch(`/api/teams/applications/${application.id}/reject?${params.toString()}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/applications/${application.id}/reject?${params.toString()}`)
 
     if (data.code === 200) {
-      ElMessage.success('已拒绝申请')
+      showSuccess('已拒绝申请')
       await fetchTeamApplications(selectedTeam.value.id)
     } else {
-      ElMessage.error(data.message || '拒绝申请失败')
+      showError(data.message || '拒绝申请失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('拒绝申请失败')
+      showError('拒绝申请失败')
     }
   }
 }
@@ -811,23 +778,18 @@ const closeInviteDialog = () => {
 
 const searchStudent = async () => {
   if (!searchStudentKeyword.value) {
-    ElMessage.warning('请输入学号')
+    showWarning('请输入学号')
     return
   }
 
   searchingStudent.value = true
 
   try {
-    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       keyword: searchStudentKeyword.value
     })
 
-    const response = await fetch(`/api/users/students/search?${params.toString()}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await get(`/users/students/search?${params.toString()}`)
 
     if (data.code === 200) {
       searchedStudents.value = data.data || []
@@ -835,17 +797,17 @@ const searchStudent = async () => {
       // 如果只有一个结果,自动选择
       if (searchedStudents.value.length === 1) {
         foundStudent.value = searchedStudents.value[0]
-        ElMessage.success(`找到学生: ${foundStudent.value.realName} (${foundStudent.value.studentNo})`)
+        showSuccess(`找到学生: ${foundStudent.value.realName} (${foundStudent.value.studentNo})`)
       } else if (searchedStudents.value.length > 1) {
-        ElMessage.success(`找到 ${searchedStudents.value.length} 个匹配的学生`)
+        showSuccess(`找到 ${searchedStudents.value.length} 个匹配的学生`)
       } else {
         ElMessage.info('未找到匹配的学生')
       }
     } else {
-      ElMessage.error(data.message || '搜索失败')
+      showError(data.message || '搜索失败')
     }
   } catch (error) {
-    ElMessage.error('搜索失败')
+    showError('搜索失败')
   } finally {
     searchingStudent.value = false
   }
@@ -865,34 +827,28 @@ const selectStudent = () => {
 
 const handleInviteMember = async () => {
   if (!selectedStudent.value) {
-    ElMessage.warning('请选择要邀请的学生')
+    showWarning('请选择要邀请的学生')
     return
   }
 
   inviting.value = true
 
   try {
-    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       invitedUserId: selectedStudent.value.id
     })
 
-    const response = await fetch(`/api/teams/${invitingTeam.value.id}/invite?${params.toString()}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/${invitingTeam.value.id}/invite?${params.toString()}`)
 
     if (data.code === 200) {
-      ElMessage.success('邀请已发送')
+      showSuccess('邀请已发送')
       closeInviteDialog()
       await fetchTeams()
     } else {
-      ElMessage.error(data.message || '邀请失败')
+      showError(data.message || '邀请失败')
     }
   } catch (error) {
-    ElMessage.error('邀请失败')
+    showError('邀请失败')
   } finally {
     inviting.value = false
   }
@@ -900,143 +856,97 @@ const handleInviteMember = async () => {
 
 const searchTeams = async () => {
   if (!searchTeamKeyword.value) {
-    ElMessage.warning('请输入团队名称')
+    showWarning('请输入团队名称')
     return
   }
 
   try {
-    const token = localStorage.getItem('token')
     const params = new URLSearchParams({
       keyword: searchTeamKeyword.value
     })
 
-    const response = await fetch(`/api/teams/search?${params.toString()}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await get(`/teams/search?${params.toString()}`)
 
     if (data.code === 200) {
       searchedTeams.value = data.data || []
 
       if (searchedTeams.value.length > 0) {
-        ElMessage.success(`找到 ${searchedTeams.value.length} 个匹配的团队`)
+        showSuccess(`找到 ${searchedTeams.value.length} 个匹配的团队`)
       } else {
         ElMessage.info('未找到匹配的团队')
       }
     } else {
-      ElMessage.error(data.message || '搜索失败')
+      showError(data.message || '搜索失败')
     }
   } catch (error) {
-    ElMessage.error('搜索失败')
+    showError('搜索失败')
   }
 }
 
 const applyToTeam = async (team) => {
   try {
-    const token = localStorage.getItem('token')
-
-    const response = await fetch(`/api/teams/${team.id}/apply`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/${team.id}/apply`)
 
     if (data.code === 200) {
-      ElMessage.success('申请已发送')
+      showSuccess('申请已发送')
       await fetchMyApplications()
     } else {
-      ElMessage.error(data.message || '申请失败')
+      showError(data.message || '申请失败')
     }
   } catch (error) {
-    ElMessage.error('申请失败')
+    showError('申请失败')
   }
 }
 
 const cancelApplication = async (application) => {
   try {
-    await ElMessageBox.confirm(
-      '确定要取消此申请吗？',
-      '取消申请',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm('确定要取消此申请吗？', '取消申请')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/applications/${application.id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await del(`/teams/applications/${application.id}`)
 
     if (data.code === 200) {
-      ElMessage.success('申请已取消')
+      showSuccess('申请已取消')
       await fetchMyApplications()
     } else {
-      ElMessage.error(data.message || '取消失败')
+      showError(data.message || '取消失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('取消失败')
+      showError('取消失败')
     }
   }
 }
 
 const acceptInvitation = async (invitation) => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/invitations/${invitation.id}/accept`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/invitations/${invitation.id}/accept`)
 
     if (data.code === 200) {
-      ElMessage.success('已接受邀请')
+      showSuccess('已接受邀请')
       await Promise.all([fetchInvitations(), fetchTeams()])
     } else {
-      ElMessage.error(data.message || '接受邀请失败')
+      showError(data.message || '接受邀请失败')
     }
   } catch (error) {
-    ElMessage.error('接受邀请失败')
+    showError('接受邀请失败')
   }
 }
 
 const rejectInvitation = async (invitation) => {
   try {
-    await ElMessageBox.confirm(
-      '确定要拒绝这个邀请吗？',
-      '拒绝邀请',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm('确定要拒绝这个邀请吗？', '拒绝邀请')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/invitations/${invitation.id}/reject`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/invitations/${invitation.id}/reject`)
 
     if (data.code === 200) {
-      ElMessage.success('已拒绝邀请')
+      showSuccess('已拒绝邀请')
       await fetchInvitations()
     } else {
-      ElMessage.error(data.message || '拒绝邀请失败')
+      showError(data.message || '拒绝邀请失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('拒绝邀请失败')
+      showError('拒绝邀请失败')
     }
   }
 }
@@ -1102,10 +1012,6 @@ const getApplicationStatusText = (status) => {
   return texts[status] || status
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
-}
 </script>
 
 <style scoped>

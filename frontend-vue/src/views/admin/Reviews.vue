@@ -233,10 +233,8 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-
-const router = useRouter()
+import { get, post, postForm } from '@/utils/api'
+import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
 
 const reviewResults = ref([])
 const competitions = ref([])
@@ -280,26 +278,15 @@ onMounted(async () => {
 
 const fetchCompetitions = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/competitions', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      competitions.value = data.data.records || []
-      // Fetch tracks for all competitions
-      for (const comp of competitions.value) {
-        const tracksResponse = await fetch(`/api/competitions/${comp.id}/tracks`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const tracksData = await tracksResponse.json()
-        if (tracksData.code === 200) {
-          allTracks.value.push(...(tracksData.data || []))
-        }
-      }
+    const data = await get('/competitions')
+    competitions.value = data.records || []
+    // Fetch tracks for all competitions
+    for (const comp of competitions.value) {
+      const tracksData = await get(`/competitions/${comp.id}/tracks`)
+      allTracks.value.push(...(tracksData || []))
     }
   } catch (error) {
-    ElMessage.error('获取赛事列表失败')
+    showError('获取赛事列表失败')
   }
 }
 
@@ -307,32 +294,23 @@ const fetchReviewResults = async () => {
   loading.value = true
 
   try {
-    const token = localStorage.getItem('token')
-
     if (filters.competitionId) {
-      const response = await fetch(`/api/reviews/competition/${filters.competitionId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await response.json()
-      if (data.code === 200) {
-        let result = data.data || []
-        if (filters.trackId) {
-          result = result.filter(r => r.competitionTrackId === filters.trackId)
-        }
-        if (filters.awardLevel) {
-          result = result.filter(r => r.awardLevel === filters.awardLevel)
-        }
-        reviewResults.value = result
-        pagination.total = result.length
-      } else {
-        ElMessage.error(data.message || '获取评审结果失败')
+      const data = await get(`/reviews/competition/${filters.competitionId}`)
+      let result = data || []
+      if (filters.trackId) {
+        result = result.filter(r => r.competitionTrackId === filters.trackId)
       }
+      if (filters.awardLevel) {
+        result = result.filter(r => r.awardLevel === filters.awardLevel)
+      }
+      reviewResults.value = result
+      pagination.total = result.length
     } else {
       reviewResults.value = []
       pagination.total = 0
     }
   } catch (error) {
-    ElMessage.error('获取评审结果失败')
+    showError('获取评审结果失败')
   } finally {
     loading.value = false
   }
@@ -345,14 +323,8 @@ const viewDetail = async (result) => {
   // Fetch judge reviews if not loaded
   if (result.submissionId && !result.judgeReviews) {
     try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/reviews/judge/submission/${result.submissionId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      const data = await response.json()
-      if (data.code === 200) {
-        selectedResult.value.judgeReviews = data.data || []
-      }
+      const data = await get(`/reviews/judge/submission/${result.submissionId}`)
+      selectedResult.value.judgeReviews = data || []
     } catch (error) {
       console.error('获取评委评审记录失败')
     }
@@ -361,33 +333,15 @@ const viewDetail = async (result) => {
 
 const calculateFinal = async (result) => {
   try {
-    await ElMessageBox.confirm(
-      `确定要计算提交 "${result.submissionCode}" 的最终评审结果吗？`,
-      '计算最终结果',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    )
+    await showConfirm(`确定要计算提交 "${result.submissionCode}" 的最终评审结果吗？`, '计算最终结果')
 
     submitting.value = true
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/reviews/calculate/${result.submissionId}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
-    if (data.code === 200) {
-      ElMessage.success('评审结果已计算')
-      await fetchReviewResults()
-    } else {
-      ElMessage.error(data.message || '计算失败')
-    }
+    await post(`/reviews/calculate/${result.submissionId}`)
+    showSuccess('评审结果已计算')
+    await fetchReviewResults()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('计算失败')
+      showError('计算失败')
     }
   } finally {
     submitting.value = false
@@ -402,35 +356,22 @@ const setAward = (result) => {
 
 const submitAward = async () => {
   if (!awardForm.awardLevel) {
-    ElMessage.warning('请选择奖项等级')
+    showWarning('请选择奖项等级')
     return
   }
 
   submitting.value = true
 
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/reviews/award/${awardForm.reviewResultId}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        awardLevel: awardForm.awardLevel
-      })
+    await postForm(`/reviews/award/${awardForm.reviewResultId}`, {
+      awardLevel: awardForm.awardLevel
     })
 
-    const data = await response.json()
-    if (data.code === 200) {
-      ElMessage.success('奖项已设置')
-      showAwardDialog.value = false
-      await fetchReviewResults()
-    } else {
-      ElMessage.error(data.message || '设置失败')
-    }
+    showSuccess('奖项已设置')
+    showAwardDialog.value = false
+    await fetchReviewResults()
   } catch (error) {
-    ElMessage.error('设置失败')
+    showError('设置失败')
   } finally {
     submitting.value = false
   }
@@ -497,16 +438,10 @@ const getAwardText = (awardLevel) => {
 
 const fetchJudges = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/judges', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      judges.value = data.data || []
-    }
+    const data = await get('/judges')
+    judges.value = data || []
   } catch (error) {
-    ElMessage.error('获取评委列表失败')
+    showError('获取评委列表失败')
   }
 }
 

@@ -72,6 +72,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { get, post } from '@/utils/api'
+import { showSuccess, showError, showConfirm } from '@/utils/messageUtils'
+import { formatDateTime } from '@/utils/dateUtils'
 
 const router = useRouter()
 const invitations = ref([])
@@ -88,85 +91,54 @@ onMounted(async () => {
 
 const fetchInvitations = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/teams/invitations/pending', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    const data = await response.json()
+    const data = await get('/teams/invitations/pending')
 
     if (data.code === 200) {
       invitations.value = data.data || []
     } else {
-      ElMessage.error(data.message || '获取邀请列表失败')
+      showError(data.message || '获取邀请列表失败')
     }
   } catch (error) {
-    ElMessage.error('获取邀请列表失败')
+    showError('获取邀请列表失败')
   }
 }
 
 const acceptInvitation = async (invitation) => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/invitations/${invitation.id}/accept`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/invitations/${invitation.id}/accept`)
 
     if (data.code === 200) {
-      ElMessage.success('已接受邀请')
+      showSuccess('已接受邀请')
       await fetchInvitations()
     } else {
-      ElMessage.error(data.message || '接受邀请失败')
+      showError(data.message || '接受邀请失败')
     }
   } catch (error) {
-    ElMessage.error('接受邀请失败')
+    showError('接受邀请失败')
   }
 }
 
 const rejectInvitation = async (invitation) => {
   try {
-    await ElMessageBox.confirm(
-      '确定要拒绝这个邀请吗？',
-      '拒绝邀请',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm('确定要拒绝这个邀请吗？', '拒绝邀请')
 
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/teams/invitations/${invitation.id}/reject`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-
-    const data = await response.json()
+    const data = await post(`/teams/invitations/${invitation.id}/reject`)
 
     if (data.code === 200) {
-      ElMessage.success('已拒绝邀请')
+      showSuccess('已拒绝邀请')
       await fetchInvitations()
     } else {
-      ElMessage.error(data.message || '拒绝邀请失败')
+      showError(data.message || '拒绝邀请失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('拒绝邀请失败')
+      showError('拒绝邀请失败')
     }
   }
 }
 
 const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
+  return formatDateTime(dateStr)
 }
 
 const getInvitationStatusClass = (status) => {

@@ -145,6 +145,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { get } from '@/utils/api'
+import { showError } from '@/utils/messageUtils'
 
 const router = useRouter()
 
@@ -169,18 +171,13 @@ onMounted(async () => {
 
 const fetchStats = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/student/stats', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    const data = await response.json()
+    const data = await get('/student/stats')
 
     if (data.code === 200) {
       stats.value = data.data
     }
   } catch (error) {
+    showError('获取统计数据失败')
     console.error('获取统计数据失败', error)
   }
 }

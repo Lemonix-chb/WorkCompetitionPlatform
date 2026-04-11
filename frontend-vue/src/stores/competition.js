@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { get } from '@/utils/api'
+import { showError } from '@/utils/messageUtils'
 
 export const useCompetitionStore = defineStore('competition', () => {
   const competitions = ref([])
@@ -13,15 +15,11 @@ export const useCompetitionStore = defineStore('competition', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await fetch('/api/competitions')
-      const data = await response.json()
-      if (data.code === 200) {
-        competitions.value = data.data.records || []
-      } else {
-        error.value = data.message
-      }
+      const data = await get('/competitions')
+      competitions.value = data.records || []
     } catch (e) {
       error.value = '获取赛事列表失败'
+      showError('获取赛事列表失败')
       console.error('Fetch competitions error:', e)
     } finally {
       loading.value = false
@@ -33,15 +31,11 @@ export const useCompetitionStore = defineStore('competition', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await fetch(`/api/competitions/${id}`)
-      const data = await response.json()
-      if (data.code === 200) {
-        currentCompetition.value = data.data
-      } else {
-        error.value = data.message
-      }
+      const data = await get(`/competitions/${id}`)
+      currentCompetition.value = data
     } catch (e) {
       error.value = '获取赛事详情失败'
+      showError('获取赛事详情失败')
       console.error('Fetch competition error:', e)
     } finally {
       loading.value = false
@@ -53,15 +47,11 @@ export const useCompetitionStore = defineStore('competition', () => {
     loading.value = true
     error.value = null
     try {
-      const response = await fetch(`/api/competitions/${competitionId}/tracks`)
-      const data = await response.json()
-      if (data.code === 200) {
-        tracks.value = data.data || []
-      } else {
-        error.value = data.message
-      }
+      const data = await get(`/competitions/${competitionId}/tracks`)
+      tracks.value = data || []
     } catch (e) {
       error.value = '获取赛道信息失败'
+      showError('获取赛道信息失败')
       console.error('Fetch tracks error:', e)
     } finally {
       loading.value = false

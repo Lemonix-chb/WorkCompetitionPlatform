@@ -93,7 +93,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { post } from '@/utils/api'
+import { showSuccess, showError } from '@/utils/messageUtils'
 
 const router = useRouter()
 
@@ -115,22 +116,11 @@ const handleRegister = async () => {
   loading.value = true
 
   try {
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value)
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('注册成功，请等待管理员审核')
-      router.push('/login')
-    } else {
-      ElMessage.error(data.message || '注册失败')
-    }
+    await post('/auth/register', form.value)
+    showSuccess('注册成功，请等待管理员审核')
+    router.push('/login')
   } catch (error) {
-    ElMessage.error('注册失败，请检查网络连接')
+    showError('注册失败，请检查网络连接')
   } finally {
     loading.value = false
   }

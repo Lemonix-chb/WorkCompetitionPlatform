@@ -62,7 +62,7 @@
               </div>
               <div class="info-item">
                 <span class="info-label caption">报名时间</span>
-                <span class="info-value caption">{{ formatDate(comp.registrationStart) }} - {{ formatDate(comp.registrationEnd) }}</span>
+                <span class="info-value caption">{{ formatDateTime(comp.registrationStart) }} - {{ formatDateTime(comp.registrationEnd) }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label caption">联系方式</span>
@@ -104,7 +104,8 @@
 import { onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCompetitionStore } from '../stores/competition'
-import { ElMessage } from 'element-plus'
+import { formatDateTime } from '@/utils/dateUtils'
+import { showSuccess } from '@/utils/messageUtils'
 
 const router = useRouter()
 const store = useCompetitionStore()
@@ -148,11 +149,6 @@ const getStatusText = (status) => {
   return texts[status] || status
 }
 
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
-}
-
 const canRegister = (comp) => {
   return comp.status === 'PUBLISHED' || comp.status === 'ONGOING'
 }
@@ -160,7 +156,7 @@ const canRegister = (comp) => {
 const handleRegister = (comp) => {
   const token = localStorage.getItem('token')
   if (!token) {
-    ElMessage.info('请先登录后再报名')
+    showSuccess('请先登录后再报名')
     router.push('/login')
   } else {
     const userRole = localStorage.getItem('userRole')

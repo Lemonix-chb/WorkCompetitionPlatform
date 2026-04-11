@@ -179,7 +179,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
 
 const router = useRouter()
 
@@ -202,7 +202,7 @@ onMounted(async () => {
   }
 
   if (role !== 'ADMIN') {
-    ElMessage.warning('您没有权限访问管理员页面')
+    showWarning('您没有权限访问管理员页面')
     router.push('/login')
     return
   }
@@ -213,11 +213,8 @@ onMounted(async () => {
 const fetchStats = async () => {
   try {
     // TODO: 实现管理员统计API
-    // const response = await fetch('/api/admin/stats')
-    // const data = await response.json()
-    // if (data.code === 200) {
-    //   stats.value = data.data
-    // }
+    // const data = await get('/admin/stats')
+    // stats.value = data
   } catch (error) {
     console.error('获取统计数据失败', error)
   }
