@@ -171,7 +171,7 @@
                     {{ formatFileSize(attachment.fileSize) }}
                   </span>
                 </div>
-                <button class="btn-download" @click="downloadAttachment(attachment)">
+                <button class="btn-download" @click="handleDownloadAttachment(attachment)">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M8 3V11M4 7L8 11L12 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -187,9 +187,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { get, postForm } from '@/utils/api'
+import { formatDateTime } from '@/utils/dateUtils'
+import { showSuccess, showWarning, showConfirm } from '@/utils/messageUtils'
+import {
+  formatFileSize,
+  getAttachmentTypeText,
+  downloadAttachment,
+  fetchWorkAttachments
+} from '@/utils/attachmentUtils'
 
 const router = useRouter()
 
@@ -219,11 +228,10 @@ const scoreMarks = {
 }
 
 onMounted(async () => {
-  const token = localStorage.getItem('token')
   const role = localStorage.getItem('userRole')
 
-  if (!token || role !== 'JUDGE') {
-    ElMessage.warning('您没有权限访问此页面')
+  if (role !== 'JUDGE') {
+    showWarning('您没有权限访问此页面')
     router.push('/login')
     return
   }
@@ -234,32 +242,24 @@ onMounted(async () => {
 const fetchPendingTasks = async () => {
   loading.value = true
   try {
-    const token = localStorage.getItem('token')
-
     // 获取我的评审任务
-    const response = await fetch('/api/reviews/my', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get('/reviews/my')
 
-    if (data.code === 200) {
-      // 过滤出待评审的任务（DRAFT状态）
-      const allTasks = data.data || []
-      pendingTasks.value = allTasks.filter(task => task.status === 'DRAFT')
+    // 过滤出待评审的任务（DRAFT状态）
+    const allTasks = data.data || []
+    pendingTasks.value = allTasks.filter(task => task.status === 'DRAFT')
 
-      // 如果有任务，获取相关的submission和work信息
-      if (pendingTasks.value.length > 0) {
-        await Promise.all([
-          fetchSubmissions(),
-          fetchWorks(),
-          fetchTeams()
-        ])
-      }
-    } else {
-      ElMessage.error(data.message || '获取评审任务失败')
+    // 如果有任务，获取相关的submission和work信息
+    if (pendingTasks.value.length > 0) {
+      await Promise.all([
+        fetchSubmissions(),
+        fetchWorks(),
+        fetchTeams()
+      ])
     }
   } catch (error) {
-    ElMessage.error('获取评审任务失败')
+    // 错误已由 API 拦截器统一处理
+    console.error('获取评审任务失败', error)
   } finally {
     loading.value = false
   }
@@ -267,14 +267,8 @@ const fetchPendingTasks = async () => {
 
 const fetchSubmissions = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/submissions/all', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      submissions.value = data.data || []
-    }
+    const data = await get('/submissions/all')
+    submissions.value = data.data || []
   } catch (error) {
     console.error('获取提交列表失败', error)
   }
@@ -282,14 +276,8 @@ const fetchSubmissions = async () => {
 
 const fetchWorks = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/works/all', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      works.value = data.data || []
-    }
+    const data = await get('/works/all')
+    works.value = data.data || []
   } catch (error) {
     console.error('获取作品列表失败', error)
   }
@@ -297,14 +285,8 @@ const fetchWorks = async () => {
 
 const fetchTeams = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/teams', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      teams.value = data.data || []
-    }
+    const data = await get('/teams')
+    teams.value = data.data || []
   } catch (error) {
     console.error('获取团队列表失败', error)
   }
@@ -350,11 +332,6 @@ const getWorkTypeText = (workType) => {
   return texts[workType] || workType
 }
 
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleString('zh-CN')
-}
-
 const showReviewDialog = (task) => {
   currentTask.value = task
   reviewForm.judgeReviewId = task.id
@@ -368,117 +345,40 @@ const viewWorkDetail = async (submissionId) => {
   if (work) {
     currentWork.value = work
     showWorkDetailDialog.value = true
-    await fetchWorkAttachments(work.id)
+    currentWorkAttachments.value = await fetchWorkAttachments(work.id)
   } else {
-    ElMessage.warning('无法获取作品详情')
+    showWarning('无法获取作品详情')
   }
 }
 
-const fetchWorkAttachments = async (workId) => {
-  try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/upload/work/${workId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      currentWorkAttachments.value = data.data || []
-    }
-  } catch (error) {
-    console.error('获取附件列表失败', error)
-  }
-}
-
-const downloadAttachment = async (attachment) => {
-  try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/upload/download/${attachment.id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    if (!response.ok) {
-      ElMessage.error('下载失败')
-      return
-    }
-
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = attachment.fileName
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-
-    ElMessage.success('下载成功')
-  } catch (error) {
-    ElMessage.error('下载失败')
-  }
-}
-
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
-
-const getAttachmentTypeText = (attachmentType) => {
-  const texts = {
-    SOURCE_CODE: '源代码',
-    DOCUMENT: '文档',
-    PRESENTATION: '演示文稿',
-    VIDEO: '视频',
-    OTHER: '其他'
-  }
-  return texts[attachmentType] || attachmentType
+const handleDownloadAttachment = async (attachment) => {
+  await downloadAttachment(attachment)
 }
 
 const submitReview = async () => {
   if (!reviewForm.score) {
-    ElMessage.warning('请输入评审分数')
+    showWarning('请输入评审分数')
     return
   }
 
   try {
-    await ElMessageBox.confirm(
-      '提交评审后将无法修改，确认提交吗？',
-      '提交确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
+    await showConfirm('提交评审后将无法修改，确认提交吗？', '提交确认')
 
     submitting.value = true
-    const token = localStorage.getItem('token')
 
-    const params = new URLSearchParams({
+    await postForm('/reviews/judge', {
       judgeReviewId: reviewForm.judgeReviewId,
       score: reviewForm.score,
       comments: reviewForm.comments || ''
     })
 
-    const response = await fetch(`/api/reviews/judge?${params.toString()}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    const data = await response.json()
-
-    if (data.code === 200) {
-      ElMessage.success('评审已提交')
-      showReviewDialogFlag.value = false
-      await fetchPendingTasks()
-    } else {
-      ElMessage.error(data.message || '提交评审失败')
-    }
+    showSuccess('评审已提交')
+    showReviewDialogFlag.value = false
+    await fetchPendingTasks()
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('提交评审失败')
+    if (error.message !== 'cancel') {
+      // 错误已由 API 拦截器处理
+      console.error('提交评审失败', error)
     }
   } finally {
     submitting.value = false

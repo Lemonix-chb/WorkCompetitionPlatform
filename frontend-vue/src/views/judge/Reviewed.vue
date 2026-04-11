@@ -127,7 +127,7 @@
                     {{ formatFileSize(attachment.fileSize) }}
                   </span>
                 </div>
-                <button class="btn-download" @click="downloadAttachment(attachment)">
+                <button class="btn-download" @click="handleDownloadAttachment(attachment)">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M8 3V11M4 7L8 11L12 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
@@ -146,6 +146,12 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import {
+  formatFileSize,
+  getAttachmentTypeText,
+  downloadAttachment,
+  fetchWorkAttachments
+} from '@/utils/attachmentUtils'
 
 const router = useRouter()
 
@@ -299,70 +305,14 @@ const viewReviewDetail = async (review) => {
   showDetailDialog.value = true
   const work = getWork(review.submissionId)
   if (work) {
-    await fetchWorkAttachments(work.id)
-  }
-}
-
-const fetchWorkAttachments = async (workId) => {
-  try {
     const token = localStorage.getItem('token')
-    const response = await fetch(`/api/upload/work/${workId}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      currentWorkAttachments.value = data.data || []
-    }
-  } catch (error) {
-    console.error('获取附件列表失败', error)
+    currentWorkAttachments.value = await fetchWorkAttachments(work.id, token)
   }
 }
 
-const downloadAttachment = async (attachment) => {
-  try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`/api/upload/download/${attachment.id}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-
-    if (!response.ok) {
-      ElMessage.error('下载失败')
-      return
-    }
-
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = attachment.fileName
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-
-    ElMessage.success('下载成功')
-  } catch (error) {
-    ElMessage.error('下载失败')
-  }
-}
-
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
-
-const getAttachmentTypeText = (attachmentType) => {
-  const texts = {
-    SOURCE_CODE: '源代码',
-    DOCUMENT: '文档',
-    PRESENTATION: '演示文稿',
-    VIDEO: '视频',
-    OTHER: '其他'
-  }
-  return texts[attachmentType] || attachmentType
+const handleDownloadAttachment = async (attachment) => {
+  const token = localStorage.getItem('token')
+  await downloadAttachment(attachment, token)
 }
 </script>
 
