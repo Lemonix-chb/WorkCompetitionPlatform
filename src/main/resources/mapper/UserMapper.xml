@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.UserMapper">
+
+    <!-- 结果映射（带角色） -->
+    <resultMap id="UserWithRoleResultMap" type="com.example.workcompetitionplatform.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="real_name" property="realName"/>
+        <result column="email" property="email"/>
+        <result column="phone" property="phone"/>
+        <result column="college" property="college"/>
+        <result column="major" property="major"/>
+        <result column="student_no" property="studentNo"/>
+        <result column="teacher_no" property="teacherNo"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <!-- 角色映射：将role_code转换为UserRole枚举 -->
+        <result column="role_code" property="role"/>
+    </resultMap>
+
+    <!-- 根据用户名查询用户（带角色） -->
+    <select id="selectByUsername" resultMap="UserWithRoleResultMap">
+        SELECT u.*, r.role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.username = #{username}
+        AND u.status = 'ACTIVE'
+        LIMIT 1
+    </select>
+
+    <!-- 根据邮箱查询用户 -->
+    <select id="selectByEmail" resultMap="UserWithRoleResultMap">
+        SELECT u.*, r.role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.email = #{email}
+        LIMIT 1
+    </select>
+
+    <!-- 根据学号查询用户（带角色） -->
+    <select id="selectByStudentNo" resultMap="UserWithRoleResultMap">
+        SELECT u.*, r.role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.student_no = #{studentNo}
+        AND u.status = 'ACTIVE'
+        LIMIT 1
+    </select>
+
+    <!-- 根据工号查询用户（带角色） -->
+    <select id="selectByTeacherNo" resultMap="UserWithRoleResultMap">
+        SELECT u.*, r.role_code
+        FROM user u
+        LEFT JOIN user_role ur ON u.id = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.teacher_no = #{teacherNo}
+        AND u.status = 'ACTIVE'
+        LIMIT 1
+    </select>
+
+    <!-- 分页查询指定角色的用户（通过user_role表JOIN查询） -->
+    <select id="selectUsersByRole" resultMap="UserWithRoleResultMap">
+        SELECT u.*, r.role_code
+        FROM user u
+        INNER JOIN user_role ur ON u.id = ur.user_id
+        INNER JOIN role r ON ur.role_id = r.id
+        WHERE r.role_code = #{roleCode}
+        <if test="keyword != null and keyword != ''">
+            AND (
+                u.username LIKE CONCAT('%', #{keyword}, '%')
+                OR u.real_name LIKE CONCAT('%', #{keyword}, '%')
+                OR u.student_no LIKE CONCAT('%', #{keyword}, '%')
+                OR u.teacher_no LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="status != null and status != ''">
+            AND u.status = #{status}
+        </if>
+        ORDER BY u.create_time DESC
+    </select>
+
+    <!-- 查询指定角色的所有用户 -->
+    <select id="selectByRole" resultMap="UserWithRoleResultMap">
+        SELECT u.*, r.role_code
+        FROM user u
+        INNER JOIN user_role ur ON u.id = ur.user_id
+        INNER JOIN role r ON ur.role_id = r.id
+        WHERE r.role_code = #{roleCode}
+          AND u.status = 'ACTIVE'
+        ORDER BY u.real_name ASC
+    </select>
+
+</mapper>

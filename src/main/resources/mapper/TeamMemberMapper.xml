@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.TeamMemberMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="TeamMemberResultMap" type="com.example.workcompetitionplatform.entity.TeamMember">
+        <id column="id" property="id"/>
+        <result column="team_id" property="teamId"/>
+        <result column="user_id" property="userId"/>
+        <result column="member_role" property="memberRole"/>
+        <result column="student_no" property="studentNo"/>
+        <result column="real_name" property="realName"/>
+        <result column="major" property="major"/>
+        <result column="college" property="college"/>
+        <result column="join_time" property="joinTime"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 根据团队ID查询所有成员 -->
+    <select id="selectByTeamId" resultMap="TeamMemberResultMap">
+        SELECT * FROM team_member
+        WHERE team_id = #{teamId}
+        AND status = 'ACTIVE'
+        ORDER BY join_time ASC
+    </select>
+
+    <!-- 根据用户ID查询用户所在的团队成员记录 -->
+    <select id="selectByUserId" resultMap="TeamMemberResultMap">
+        SELECT * FROM team_member
+        WHERE user_id = #{userId}
+        AND status = 'ACTIVE'
+        ORDER BY join_time DESC
+    </select>
+
+    <!-- 根据团队ID和用户ID查询团队成员记录 -->
+    <select id="selectByTeamIdAndUserId" resultMap="TeamMemberResultMap">
+        SELECT * FROM team_member
+        WHERE team_id = #{teamId}
+        AND user_id = #{userId}
+        AND status = 'ACTIVE'
+        LIMIT 1
+    </select>
+
+    <!-- 根据团队ID统计成员数量 -->
+    <select id="countByTeamId" resultType="int">
+        SELECT COUNT(*) FROM team_member
+        WHERE team_id = #{teamId}
+        AND status = 'ACTIVE'
+    </select>
+
+    <!-- 删除团队的所有成员 -->
+    <delete id="deleteByTeamId">
+        DELETE FROM team_member
+        WHERE team_id = #{teamId}
+    </delete>
+
+</mapper>

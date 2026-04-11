@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.CompetitionTrackMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="CompetitionTrackResultMap" type="com.example.workcompetitionplatform.entity.CompetitionTrack">
+        <id column="id" property="id"/>
+        <result column="competition_id" property="competitionId"/>
+        <result column="track_name" property="trackName"/>
+        <result column="track_code" property="trackCode"/>
+        <result column="track_type" property="trackType"/>
+        <result column="max_team_size" property="maxTeamSize"/>
+        <result column="min_team_size" property="minTeamSize"/>
+        <result column="description" property="description"/>
+        <result column="submission_format" property="submissionFormat"/>
+        <result column="max_file_size_mb" property="maxFileSizeMb"/>
+        <result column="allowed_file_types" property="allowedFileTypes"/>
+        <result column="submission_email" property="submissionEmail"/>
+        <result column="min_pages" property="minPages"/>
+        <result column="min_duration_sec" property="minDurationSec"/>
+        <result column="max_duration_sec" property="maxDurationSec"/>
+        <result column="aspect_ratio" property="aspectRatio"/>
+        <result column="resolution" property="resolution"/>
+        <result column="review_criteria" property="reviewCriteria"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据赛事ID查询赛道 -->
+    <select id="selectByCompetitionId" resultMap="CompetitionTrackResultMap">
+        SELECT * FROM competition_track
+        WHERE competition_id = #{competitionId}
+        AND status = 'ACTIVE'
+        ORDER BY id ASC
+    </select>
+
+    <!-- 根据赛道编码查询 -->
+    <select id="selectByTrackCode" resultMap="CompetitionTrackResultMap">
+        SELECT * FROM competition_track
+        WHERE track_code = #{trackCode}
+        AND status = 'ACTIVE'
+        LIMIT 1
+    </select>
+
+</mapper>

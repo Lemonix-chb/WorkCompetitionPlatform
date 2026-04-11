@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.WorkMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="WorkResultMap" type="com.example.workcompetitionplatform.entity.Work">
+        <id column="id" property="id"/>
+        <result column="team_id" property="teamId"/>
+        <result column="competition_id" property="competitionId"/>
+        <result column="track_id" property="trackId"/>
+        <result column="work_code" property="workCode"/>
+        <result column="work_name" property="workName"/>
+        <result column="work_type" property="workType"/>
+        <result column="description" property="description"/>
+        <result column="innovation_points" property="innovationPoints"/>
+        <result column="key_features" property="keyFeatures"/>
+        <result column="tech_stack" property="techStack"/>
+        <result column="division_of_labor" property="divisionOfLabor"/>
+        <result column="target_users" property="targetUsers"/>
+        <result column="development_status" property="developmentStatus"/>
+        <result column="current_version" property="currentVersion"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+
+        <!-- 显示字段 -->
+        <result column="team_name" property="teamName"/>
+        <result column="competition_name" property="competitionName"/>
+        <result column="track_name" property="trackName"/>
+        <result column="leader_name" property="leaderName"/>
+    </resultMap>
+
+    <!-- 根据用户ID查询作品列表（用户所在团队的作品，包含详细信息） -->
+    <select id="selectByUserId" resultMap="WorkResultMap">
+        SELECT w.*,
+               t.team_name,
+               c.competition_name,
+               ct.track_name,
+               u.real_name AS leader_name
+        FROM work w
+        INNER JOIN team_member tm ON w.team_id = tm.team_id
+        LEFT JOIN team t ON w.team_id = t.id
+        LEFT JOIN competition c ON w.competition_id = c.id
+        LEFT JOIN competition_track ct ON w.track_id = ct.id
+        LEFT JOIN user u ON t.leader_id = u.id
+        WHERE tm.user_id = #{userId}
+        ORDER BY w.create_time DESC
+    </select>
+
+    <!-- 根据赛道ID查询作品列表 -->
+    <select id="selectByCompetitionTrackId" resultMap="WorkResultMap">
+        SELECT w.*,
+               t.team_name,
+               c.competition_name,
+               ct.track_name,
+               u.real_name AS leader_name
+        FROM work w
+        LEFT JOIN team t ON w.team_id = t.id
+        LEFT JOIN competition c ON w.competition_id = c.id
+        LEFT JOIN competition_track ct ON w.track_id = ct.id
+        LEFT JOIN user u ON t.leader_id = u.id
+        WHERE w.track_id = #{competitionTrackId}
+        ORDER BY w.create_time DESC
+    </select>
+
+    <!-- 根据作品状态查询作品列表 -->
+    <select id="selectByStatus" resultMap="WorkResultMap">
+        SELECT w.*,
+               t.team_name,
+               c.competition_name,
+               ct.track_name,
+               u.real_name AS leader_name
+        FROM work w
+        LEFT JOIN team t ON w.team_id = t.id
+        LEFT JOIN competition c ON w.competition_id = c.id
+        LEFT JOIN competition_track ct ON w.track_id = ct.id
+        LEFT JOIN user u ON t.leader_id = u.id
+        WHERE w.development_status = #{status}
+        ORDER BY w.create_time DESC
+    </select>
+
+    <!-- 查询所有作品列表（管理员，包含详细信息） -->
+    <select id="selectAllWorks" resultMap="WorkResultMap">
+        SELECT w.*,
+               t.team_name,
+               c.competition_name,
+               ct.track_name,
+               u.real_name AS leader_name
+        FROM work w
+        LEFT JOIN team t ON w.team_id = t.id
+        LEFT JOIN competition c ON w.competition_id = c.id
+        LEFT JOIN competition_track ct ON w.track_id = ct.id
+        LEFT JOIN user u ON t.leader_id = u.id
+        ORDER BY w.create_time DESC
+    </select>
+
+    <!-- 根据赛事ID查询作品列表（包含详细信息） -->
+    <select id="selectByCompetitionId" resultMap="WorkResultMap">
+        SELECT w.*,
+               t.team_name,
+               c.competition_name,
+               ct.track_name,
+               u.real_name AS leader_name
+        FROM work w
+        LEFT JOIN team t ON w.team_id = t.id
+        LEFT JOIN competition c ON w.competition_id = c.id
+        LEFT JOIN competition_track ct ON w.track_id = ct.id
+        LEFT JOIN user u ON t.leader_id = u.id
+        WHERE w.competition_id = #{competitionId}
+        ORDER BY w.create_time DESC
+    </select>
+
+</mapper>

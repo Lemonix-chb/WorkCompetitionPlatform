@@ -1,0 +1,25 @@
+{
+  "name": "work-competition-platform-frontend",
+  "version": "1.0.0",
+  "description": "信息管理与智能评价系统前端 - Vue 3",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.5",
+    "pinia": "^2.1.7",
+    "axios": "^1.6.2",
+    "element-plus": "^2.4.4",
+    "@element-plus/icons-vue": "^2.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.5.2",
+    "vite": "^5.0.8",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.20.1"
+  }
+}

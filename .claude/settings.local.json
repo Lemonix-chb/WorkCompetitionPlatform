@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql --version)",
+      "Bash(mysql -u root -p root -e \"source e:/JavaProject/WorkCompetitionPlatform/database/init_database.sql\")",
+      "Bash(mysql -u root -e \"SHOW DATABASES;\")",
+      "Bash(claude mcp:*)",
+      "Bash(mysql -u root -p123456 -e \"source e:/JavaProject/WorkCompetitionPlatform/database/init_database.sql\")",
+      "Bash(mysql -u root -p123456 -e \"CREATE DATABASE IF NOT EXISTS WorkCompetitionPlatform CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci; SHOW DATABASES;\")",
+      "Bash(mysql -u root -p123456 -e \"DROP DATABASE IF EXISTS WorkCompetitionPlatform; DROP DATABASE IF EXISTS work_competition_platform; CREATE DATABASE WorkCompetitionPlatform CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci; USE WorkCompetitionPlatform; CREATE TABLE role \\(id BIGINT PRIMARY KEY AUTO_INCREMENT, role_name VARCHAR\\(50\\) NOT NULL, role_code VARCHAR\\(50\\) NOT NULL, description VARCHAR\\(200\\)\\) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; INSERT INTO role \\(role_name, role_code, description\\) VALUES \\('管理员', 'ADMIN', '赛事组织者'\\); SELECT * FROM role;\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 -e \"DROP DATABASE IF EXISTS WorkCompetitionPlatform; CREATE DATABASE WorkCompetitionPlatform CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci; USE WorkCompetitionPlatform; CREATE TABLE role \\(id BIGINT PRIMARY KEY AUTO_INCREMENT, role_name VARCHAR\\(50\\) NOT NULL, role_code VARCHAR\\(50\\) NOT NULL, description VARCHAR\\(200\\)\\) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; INSERT INTO role \\(role_name, role_code, description\\) VALUES \\('管理员', 'ADMIN', '赛事组织者'\\), \\('评委', 'JUDGE', '评审专家'\\), \\('参赛者', 'PARTICIPANT', '参赛学生'\\); SELECT * FROM role;\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 -e \"source e:/JavaProject/WorkCompetitionPlatform/database/init_database.sql\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 WorkCompetitionPlatform -e \"SELECT id, username, real_name, email, college, major, student_no FROM user LIMIT 10; SELECT '---'; SELECT u.username, r.role_name FROM user u JOIN user_role ur ON u.id = ur.user_id JOIN role r ON ur.role_id = r.id; SELECT '---'; SELECT track_name, track_type, max_team_size, min_team_size FROM competition_track;\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 -e \"SHOW DATABASES LIKE '%competition%'; USE work_competition_platform; SHOW TABLES; SELECT COUNT\\(*\\) as table_count FROM information_schema.tables WHERE table_schema = 'work_competition_platform';\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 work_competition_platform -e \"-- 查看用户数据 SELECT id, username, real_name, college, major, student_no FROM user; -- 查看角色分配 SELECT u.username AS '用户名', r.role_name AS '角色' FROM user u JOIN user_role ur ON u.id = ur.user_id JOIN role r ON ur.role_id = r.id; -- 查看赛事 SELECT competition_name, competition_year, status FROM competition; -- 查看赛道 SELECT track_name AS '赛道名称', track_type AS '作品类型', max_team_size AS '最大人数', min_team_size AS '最小人数' FROM competition_track; -- 查看系统配置 SELECT config_key AS '配置项', config_value AS '配置值', description AS '说明' FROM system_config;\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 work_competition_platform -e \"SELECT u.username, r.role_name FROM user u JOIN user_role ur ON u.id = ur.user_id JOIN role r ON ur.role_id = r.id ORDER BY u.id;\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 work_competition_platform -e \"SELECT track_name, track_type, max_team_size, min_team_size FROM competition_track;\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 -e \"SHOW DATABASES;\")",
+      "Bash(mysql -u root -p123456 --default-character-set=utf8mb4 -e \"DROP DATABASE IF EXISTS workcompetitionplatform; DROP DATABASE IF EXISTS work_competition; SHOW DATABASES LIKE '%competition%';\")",
+      "Bash(echo \"-Djava.home=C:\\\\\\\\Users\\\\\\\\Lemonix-chb\\\\\\\\.jdks\\\\\\\\ms-17.0.18\")",
+      "mcp__plugin_figma_figma__whoami",
+      "mcp__plugin_figma_figma__create_new_file",
+      "mcp__plugin_figma_figma__use_figma",
+      "Bash(set JAVA_HOME=C:\\\\Users\\\\Lemonix-chb\\\\.jdks\\\\ms-17.0.18)",
+      "Bash(\"C:\\\\Users\\\\Lemonix-chb\\\\.jdks\\\\ms-17.0.18\\\\bin\\\\java\" -version)",
+      "Bash(cmd /c \"set JAVA_HOME=C:\\\\Users\\\\Lemonix-chb\\\\.jdks\\\\ms-17.0.18 && mvn clean package -DskipTests\")",
+      "Bash(npm install:*)",
+      "Bash(timeout 30)",
+      "Bash(ls -lh e:/JavaProject/WorkCompetitionPlatform/target/*.jar)",
+      "Bash(cmd /c \"set JAVA_HOME=C:\\\\Users\\\\Lemonix-chb\\\\.jdks\\\\ms-17.0.18 && java -jar target\\\\WorkCompetitionPlatform-0.0.1-SNAPSHOT.jar\")",
+      "Bash(cmd /c start-backend.bat)",
+      "Bash(\"C:\\\\Program Files\\\\Apache Software Foundation\\\\maven\\\\bin\\\\mvn\" clean compile -DskipTests)",
+      "Bash(npm run:*)",
+      "Bash(ls -la e:/JavaProject/WorkCompetitionPlatform/target/*.jar)"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.WorkAttachmentMapper">
+
+    <!-- 根据作品ID查询所有附件 -->
+    <select id="selectByWorkId" resultType="com.example.workcompetitionplatform.entity.WorkAttachment">
+        SELECT *
+        FROM work_attachment
+        WHERE work_id = #{workId}
+        ORDER BY upload_time DESC
+    </select>
+
+    <!-- 根据作品ID和附件类型查询附件 -->
+    <select id="selectByWorkIdAndType" resultType="com.example.workcompetitionplatform.entity.WorkAttachment">
+        SELECT *
+        FROM work_attachment
+        WHERE work_id = #{workId}
+        AND attachment_type = #{attachmentType}
+        ORDER BY upload_time DESC
+    </select>
+
+</mapper>

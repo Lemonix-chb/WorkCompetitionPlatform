@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.RegistrationMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="RegistrationResultMap" type="com.example.workcompetitionplatform.entity.Registration">
+        <id column="id" property="id"/>
+        <result column="team_id" property="teamId"/>
+        <result column="competition_id" property="competitionId"/>
+        <result column="track_id" property="trackId"/>
+        <result column="registration_code" property="registrationCode"/>
+        <result column="submitter_id" property="submitterId"/>
+        <result column="registration_time" property="registrationTime"/>
+        <result column="status" property="status"/>
+        <result column="review_comment" property="reviewComment"/>
+        <result column="reviewer_id" property="reviewerId"/>
+        <result column="review_time" property="reviewTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据赛事ID查询所有报名记录 -->
+    <select id="selectByCompetitionId" resultMap="RegistrationResultMap">
+        SELECT * FROM registration
+        WHERE competition_id = #{competitionId}
+        ORDER BY registration_time DESC
+    </select>
+
+    <!-- 根据用户ID查询所有报名记录（通过团队成员表关联） -->
+    <select id="selectByUserId" resultMap="RegistrationResultMap">
+        SELECT r.*
+        FROM registration r
+        INNER JOIN team_member tm ON r.team_id = tm.team_id
+        WHERE tm.user_id = #{userId}
+        ORDER BY r.registration_time DESC
+    </select>
+
+    <!-- 根据赛道ID查询报名记录 -->
+    <select id="selectByCompetitionTrackId" resultMap="RegistrationResultMap">
+        SELECT * FROM registration
+        WHERE track_id = #{competitionTrackId}
+        ORDER BY registration_time DESC
+    </select>
+
+    <!-- 根据报名状态查询报名记录 -->
+    <select id="selectByStatus" resultMap="RegistrationResultMap">
+        SELECT * FROM registration
+        WHERE status = #{status}
+        ORDER BY registration_time DESC
+    </select>
+
+    <!-- 根据赛事ID和用户ID查询报名记录 -->
+    <select id="selectByCompetitionIdAndUserId" resultMap="RegistrationResultMap">
+        SELECT r.*
+        FROM registration r
+        INNER JOIN team_member tm ON r.team_id = tm.team_id
+        WHERE r.competition_id = #{competitionId}
+        AND tm.user_id = #{userId}
+        LIMIT 1
+    </select>
+
+</mapper>

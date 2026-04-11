@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.JudgeReviewMapper">
+
+    <!-- 结果映射（包含关联信息） -->
+    <resultMap id="JudgeReviewWithDetailsResultMap" type="com.example.workcompetitionplatform.entity.JudgeReview">
+        <id column="id" property="id"/>
+        <result column="submission_id" property="submissionId"/>
+        <result column="team_id" property="teamId"/>
+        <result column="judge_id" property="judgeId"/>
+        <result column="innovation_score" property="innovationScore"/>
+        <result column="practicality_score" property="practicalityScore"/>
+        <result column="user_experience_score" property="userExperienceScore"/>
+        <result column="overall_score" property="overallScore"/>
+        <result column="review_comment" property="reviewComment"/>
+        <result column="review_time" property="reviewTime"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+
+        <!-- 显示字段（非数据库字段） -->
+        <result column="submission_code" property="submissionCode"/>
+        <result column="work_name" property="workName"/>
+        <result column="team_name" property="teamName"/>
+        <result column="judge_name" property="judgeName"/>
+        <result column="competition_id" property="competitionId"/>
+        <result column="track_id" property="trackId"/>
+    </resultMap>
+
+    <!-- 根据提交ID查询评委评审记录（包含详细信息） -->
+    <select id="selectBySubmissionId" resultMap="JudgeReviewWithDetailsResultMap">
+        SELECT jr.*,
+               s.submission_code,
+               w.work_name,
+               t.team_name,
+               u.real_name AS judge_name,
+               w.competition_id,
+               w.track_id
+        FROM judge_review jr
+        LEFT JOIN submission s ON jr.submission_id = s.id
+        LEFT JOIN work w ON s.work_id = w.id
+        LEFT JOIN team t ON jr.team_id = t.id
+        LEFT JOIN user u ON jr.judge_id = u.id
+        WHERE jr.submission_id = #{submissionId}
+        ORDER BY jr.create_time DESC
+    </select>
+
+    <!-- 根据评委ID查询评委评审记录（包含详细信息） -->
+    <select id="selectByJudgeUserId" resultMap="JudgeReviewWithDetailsResultMap">
+        SELECT jr.*,
+               s.submission_code,
+               w.work_name,
+               t.team_name,
+               u.real_name AS judge_name,
+               w.competition_id,
+               w.track_id
+        FROM judge_review jr
+        LEFT JOIN submission s ON jr.submission_id = s.id
+        LEFT JOIN work w ON s.work_id = w.id
+        LEFT JOIN team t ON jr.team_id = t.id
+        LEFT JOIN user u ON jr.judge_id = u.id
+        WHERE jr.judge_id = #{judgeUserId}
+        ORDER BY jr.create_time DESC
+    </select>
+
+    <!-- 根据评审状态查询评委评审记录 -->
+    <select id="selectByReviewStatus" resultMap="JudgeReviewWithDetailsResultMap">
+        SELECT jr.*,
+               s.submission_code,
+               w.work_name,
+               t.team_name,
+               u.real_name AS judge_name,
+               w.competition_id,
+               w.track_id
+        FROM judge_review jr
+        LEFT JOIN submission s ON jr.submission_id = s.id
+        LEFT JOIN work w ON s.work_id = w.id
+        LEFT JOIN team t ON jr.team_id = t.id
+        LEFT JOIN user u ON jr.judge_id = u.id
+        WHERE jr.status = #{reviewStatus}
+        ORDER BY jr.create_time DESC
+    </select>
+
+    <!-- 根据赛道ID查询评委评审记录 -->
+    <select id="selectByCompetitionTrackId" resultMap="JudgeReviewWithDetailsResultMap">
+        SELECT jr.*,
+               s.submission_code,
+               w.work_name,
+               t.team_name,
+               u.real_name AS judge_name,
+               w.competition_id,
+               w.track_id
+        FROM judge_review jr
+        LEFT JOIN submission s ON jr.submission_id = s.id
+        LEFT JOIN work w ON s.work_id = w.id
+        LEFT JOIN team t ON jr.team_id = t.id
+        LEFT JOIN user u ON jr.judge_id = u.id
+        WHERE w.track_id = #{competitionTrackId}
+        ORDER BY jr.create_time DESC
+    </select>
+
+    <!-- 根据赛事ID查询评委评审记录 -->
+    <select id="selectByCompetitionId" resultMap="JudgeReviewWithDetailsResultMap">
+        SELECT jr.*,
+               s.submission_code,
+               w.work_name,
+               t.team_name,
+               u.real_name AS judge_name,
+               w.competition_id,
+               w.track_id
+        FROM judge_review jr
+        LEFT JOIN submission s ON jr.submission_id = s.id
+        LEFT JOIN work w ON s.work_id = w.id
+        LEFT JOIN team t ON jr.team_id = t.id
+        LEFT JOIN user u ON jr.judge_id = u.id
+        WHERE w.competition_id = #{competitionId}
+        ORDER BY jr.create_time DESC
+    </select>
+
+    <!-- 根据提交ID和评委ID查询评委评审记录 -->
+    <select id="selectBySubmissionIdAndJudgeUserId" resultMap="JudgeReviewWithDetailsResultMap">
+        SELECT jr.*,
+               s.submission_code,
+               w.work_name,
+               t.team_name,
+               u.real_name AS judge_name,
+               w.competition_id,
+               w.track_id
+        FROM judge_review jr
+        LEFT JOIN submission s ON jr.submission_id = s.id
+        LEFT JOIN work w ON s.work_id = w.id
+        LEFT JOIN team t ON jr.team_id = t.id
+        LEFT JOIN user u ON jr.judge_id = u.id
+        WHERE jr.submission_id = #{submissionId}
+          AND jr.judge_id = #{judgeUserId}
+        LIMIT 1
+    </select>
+
+    <!-- 查询待分配评审的作品提交（已提交但未分配评委） -->
+    <select id="selectSubmissionsAwaitingAssignment" resultMap="JudgeReviewWithDetailsResultMap">
+        SELECT s.id AS submission_id,
+               s.submission_code,
+               s.team_id,
+               w.work_name,
+               t.team_name,
+               w.competition_id,
+               w.track_id,
+               s.submission_time,
+               s.status AS submission_status
+        FROM submission s
+        LEFT JOIN work w ON s.work_id = w.id
+        LEFT JOIN team t ON s.team_id = t.id
+        WHERE s.status = 'SUBMITTED'
+          <if test="competitionId != null">
+              AND w.competition_id = #{competitionId}
+          </if>
+          AND NOT EXISTS (
+              SELECT 1 FROM judge_review jr
+              WHERE jr.submission_id = s.id
+          )
+        ORDER BY s.submission_time DESC
+    </select>
+
+    <!-- 查询评委当前的待评审任务数量 -->
+    <select id="countPendingTasksByJudge" resultType="int">
+        SELECT COUNT(*)
+        FROM judge_review
+        WHERE judge_id = #{judgeUserId}
+          AND status = 'DRAFT'
+    </select>
+
+</mapper>
