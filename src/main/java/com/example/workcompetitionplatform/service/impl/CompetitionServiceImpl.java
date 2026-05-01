@@ -2,18 +2,23 @@ package com.example.workcompetitionplatform.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.workcompetitionplatform.dto.CompetitionTimeStatusDTO;
 import com.example.workcompetitionplatform.entity.Competition;
+import com.example.workcompetitionplatform.entity.CompetitionPhase;
 import com.example.workcompetitionplatform.entity.CompetitionTrack;
 import com.example.workcompetitionplatform.entity.Registration;
+import com.example.workcompetitionplatform.exception.BusinessException;
 import com.example.workcompetitionplatform.mapper.CompetitionMapper;
 import com.example.workcompetitionplatform.mapper.CompetitionTrackMapper;
 import com.example.workcompetitionplatform.mapper.RegistrationMapper;
 import com.example.workcompetitionplatform.mapper.TeamRegistrationMapper;
 import com.example.workcompetitionplatform.service.ICompetitionService;
+import com.example.workcompetitionplatform.util.DateTimeConstants;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -137,7 +142,7 @@ public class CompetitionServiceImpl extends ServiceImpl<CompetitionMapper, Compe
             return false;
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateTimeConstants.now();
         return now.isAfter(competition.getRegistrationStart()) && now.isBefore(competition.getRegistrationEnd());
     }
 
@@ -148,7 +153,7 @@ public class CompetitionServiceImpl extends ServiceImpl<CompetitionMapper, Compe
             return false;
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateTimeConstants.now();
         return now.isAfter(competition.getSubmissionStart()) && now.isBefore(competition.getSubmissionEnd());
     }
 
@@ -159,8 +164,64 @@ public class CompetitionServiceImpl extends ServiceImpl<CompetitionMapper, Compe
             return false;
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = DateTimeConstants.now();
         return now.isAfter(competition.getReviewStart()) && now.isBefore(competition.getReviewEnd());
+    }
+
+    @Override
+    public CompetitionTimeStatusDTO getTimeStatus(Long competitionId) {
+        Competition competition = getById(competitionId);
+        if (competition == null) {
+            throw new BusinessException("赛事不存在");
+        }
+
+        LocalDateTime now = DateTimeConstants.now();
+        CompetitionTimeStatusDTO dto = new CompetitionTimeStatusDTO();
+
+        dto.setCompetitionId(competitionId);
+        dto.setCompetitionName(competition.getCompetitionName());
+        dto.setRegistrationStart(competition.getRegistrationStart());
+        dto.setRegistrationEnd(competition.getRegistrationEnd());
+        dto.setSubmissionStart(competition.getSubmissionStart());
+        dto.setSubmissionEnd(competition.getSubmissionEnd());
+        dto.setReviewStart(competition.getReviewStart());
+        dto.setReviewEnd(competition.getReviewEnd());
+
+        // 使用已加载的competition对象直接判断，避免重复查询
+        boolean inRegistration = now.isAfter(competition.getRegistrationStart()) &&
+                                 now.isBefore(competition.getRegistrationEnd());
+        boolean inSubmission = now.isAfter(competition.getSubmissionStart()) &&
+                               now.isBefore(competition.getSubmissionEnd());
+        boolean inReview = now.isAfter(competition.getReviewStart()) &&
+                          now.isBefore(competition.getReviewEnd());
+
+        dto.setCanRegister(inRegistration);
+        dto.setCanSubmit(inSubmission);
+
+        // 计算当前阶段和剩余天数
+        if (now.isBefore(competition.getRegistrationStart())) {
+            dto.setCurrentPhase(CompetitionPhase.BEFORE_REGISTRATION);
+            long days = ChronoUnit.DAYS.between(now, competition.getRegistrationStart());
+            dto.setRegistrationDaysRemaining(days);
+        } else if (inRegistration) {
+            dto.setCurrentPhase(CompetitionPhase.REGISTRATION);
+            long days = ChronoUnit.DAYS.between(now, competition.getRegistrationEnd());
+            dto.setRegistrationDaysRemaining(Math.max(0, days));
+        } else if (now.isBefore(competition.getSubmissionStart())) {
+            dto.setCurrentPhase(CompetitionPhase.BEFORE_SUBMISSION);
+            long days = ChronoUnit.DAYS.between(now, competition.getSubmissionStart());
+            dto.setSubmissionDaysRemaining(days);
+        } else if (inSubmission) {
+            dto.setCurrentPhase(CompetitionPhase.SUBMISSION);
+            long days = ChronoUnit.DAYS.between(now, competition.getSubmissionEnd());
+            dto.setSubmissionDaysRemaining(Math.max(0, days));
+        } else if (inReview) {
+            dto.setCurrentPhase(CompetitionPhase.REVIEW);
+        } else {
+            dto.setCurrentPhase(CompetitionPhase.FINISHED);
+        }
+
+        return dto;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.example.workcompetitionplatform.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.workcompetitionplatform.dto.CompetitionTimeStatusDTO;
 import com.example.workcompetitionplatform.entity.Competition;
 import com.example.workcompetitionplatform.entity.CompetitionTrack;
 
@@ -131,6 +132,14 @@ public interface ICompetitionService extends IService<Competition> {
      * @return 是否在评审时间内
      */
     boolean isInReviewPeriod(Long competitionId);
+
+    /**
+     * 获取赛事时间状态信息
+     *
+     * @param competitionId 赛事ID
+     * @return 时间状态DTO
+     */
+    CompetitionTimeStatusDTO getTimeStatus(Long competitionId);
 
     /**
      * 检查用户是否已报名该赛事

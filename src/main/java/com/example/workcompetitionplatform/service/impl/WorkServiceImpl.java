@@ -3,6 +3,7 @@ package com.example.workcompetitionplatform.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.workcompetitionplatform.entity.AIReviewReport;
+import com.example.workcompetitionplatform.entity.Competition;
 import com.example.workcompetitionplatform.entity.JudgeReview;
 import com.example.workcompetitionplatform.entity.Submission;
 import com.example.workcompetitionplatform.entity.Team;
@@ -10,6 +11,7 @@ import com.example.workcompetitionplatform.entity.TeamMember;
 import com.example.workcompetitionplatform.entity.Work;
 import com.example.workcompetitionplatform.entity.WorkAttachment;
 import com.example.workcompetitionplatform.mapper.AIReviewReportMapper;
+import com.example.workcompetitionplatform.mapper.CompetitionMapper;
 import com.example.workcompetitionplatform.mapper.JudgeReviewMapper;
 import com.example.workcompetitionplatform.mapper.SubmissionMapper;
 import com.example.workcompetitionplatform.mapper.TeamMapper;
@@ -17,11 +19,15 @@ import com.example.workcompetitionplatform.mapper.TeamMemberMapper;
 import com.example.workcompetitionplatform.mapper.WorkAttachmentMapper;
 import com.example.workcompetitionplatform.mapper.WorkMapper;
 import com.example.workcompetitionplatform.service.IWorkService;
+import com.example.workcompetitionplatform.service.AsyncAIReviewService;
 import com.example.workcompetitionplatform.exception.BusinessException;
+import com.example.workcompetitionplatform.util.DateTimeConstants;
+import com.example.workcompetitionplatform.util.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -53,6 +59,12 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements IW
     @Autowired
     private AIReviewReportMapper aiReviewReportMapper;
 
+    @Autowired
+    private AsyncAIReviewService asyncAIReviewService;
+
+    @Autowired
+    private CompetitionMapper competitionMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Work createWork(String workName, Long teamId, Long competitionId, Long trackId, Work.WorkType workType) {
@@ -62,16 +74,17 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements IW
             throw new BusinessException("团队不存在");
         }
 
-        // 检查团队是否已确认
-        if (team.getStatus() != Team.TeamStatus.CONFIRMED) {
-            throw new BusinessException("团队尚未确认，无法创建作品");
+        // 检查团队状态是否允许创建作品（CONFIRMED或REGISTERED状态都可以）
+        if (team.getStatus() != Team.TeamStatus.CONFIRMED && team.getStatus() != Team.TeamStatus.REGISTERED) {
+            String statusMsg = team.getStatus() == Team.TeamStatus.FORMING ? "组建中" : team.getStatus().toString();
+            throw new BusinessException("团队当前状态为\"" + statusMsg + "\"，无法创建作品。请先确认团队或完成报名");
         }
 
         // 检查团队是否已有作品
         LambdaQueryWrapper<Work> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Work::getTeamId, teamId);
         if (baseMapper.selectCount(wrapper) > 0) {
-            throw new BusinessException("该团队已创建作品");
+            throw new BusinessException("该团队已创建作品，不能重复创建。如需修改请在作品管理中编辑");
         }
 
         // 创建作品
@@ -176,6 +189,16 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements IW
             throw new BusinessException("作品不存在");
         }
 
+        // 检查是否在提交期内（一次性加载competition避免重复查询）
+        Competition competition = competitionMapper.selectById(work.getCompetitionId());
+        LocalDateTime now = DateTimeConstants.now();
+        if (!now.isAfter(competition.getSubmissionStart()) ||
+            !now.isBefore(competition.getSubmissionEnd())) {
+            String endTime = competition.getSubmissionEnd()
+                .format(DateTimeConstants.STANDARD_FORMAT);
+            throw new BusinessException("作品提交已截止，截止时间：" + endTime);
+        }
+
         // 检查作品状态（开发中、已完成或已提交状态都可以提交）
         if (work.getDevelopmentStatus() == Work.DevelopmentStatus.AWARDED) {
             throw new BusinessException("已获奖的作品无法重新提交");
@@ -195,42 +218,34 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements IW
         wrapper.eq(Submission::getWorkId, workId);
         Submission existingSubmission = submissionMapper.selectOne(wrapper);
 
+        Long submissionId;
         if (existingSubmission != null) {
-            // 更新已有的submission记录（重新提交）
-            existingSubmission.setFileName(latestAttachment.getFileName());
-            existingSubmission.setFilePath(latestAttachment.getFilePath());
-            existingSubmission.setFileSizeMb(new java.math.BigDecimal(latestAttachment.getFileSize() / (1024.0 * 1024.0)));
-            existingSubmission.setVersion(work.getCurrentVersion());
-            existingSubmission.setStatus(Submission.SubmissionStatus.SUBMITTED);
-            existingSubmission.setSubmissionTime(java.time.LocalDateTime.now());
-            submissionMapper.updateById(existingSubmission);
-
-            // 删除之前的评审任务（作品重新提交后之前的评审不再适用）
+            existingSubmission.setValidationResult(null);
             LambdaQueryWrapper<JudgeReview> reviewWrapper = new LambdaQueryWrapper<>();
             reviewWrapper.eq(JudgeReview::getSubmissionId, existingSubmission.getId());
             judgeReviewMapper.delete(reviewWrapper);
 
-            // 删除之前的AI评审报告（如果有）
             LambdaQueryWrapper<AIReviewReport> aiReportWrapper = new LambdaQueryWrapper<>();
             aiReportWrapper.eq(AIReviewReport::getSubmissionId, existingSubmission.getId());
             aiReviewReportMapper.delete(aiReportWrapper);
+
+            populateSubmissionFields(existingSubmission, latestAttachment, work);
+            submissionMapper.updateById(existingSubmission);
+            submissionId = existingSubmission.getId();
         } else {
-            // 创建新的submission记录（首次提交）
             Submission submission = new Submission();
             submission.setWorkId(workId);
             submission.setTeamId(work.getTeamId());
             submission.setSubmissionCode(work.getWorkCode());
-            submission.setSubmitterId(work.getTeamId()); // 简化处理
-            submission.setFileName(latestAttachment.getFileName());
-            submission.setFilePath(latestAttachment.getFilePath());
-            submission.setFileSizeMb(new java.math.BigDecimal(latestAttachment.getFileSize() / (1024.0 * 1024.0)));
+            submission.setSubmitterId(work.getTeamId());
             submission.setFileType(Submission.FileType.valueOf(work.getWorkType().name()));
-            submission.setVersion(work.getCurrentVersion());
-            submission.setStatus(Submission.SubmissionStatus.SUBMITTED);
-            submission.setSubmissionTime(java.time.LocalDateTime.now());
             submission.setIsFinalVersion(true);
+            populateSubmissionFields(submission, latestAttachment, work);
             submissionMapper.insert(submission);
+            submissionId = submission.getId();
         }
+
+        asyncAIReviewService.performAIReviewAsync(submissionId, UserContext.getCurrentUserId());
 
         // 更新作品状态为已提交
         work.setDevelopmentStatus(Work.DevelopmentStatus.SUBMITTED);
@@ -303,5 +318,14 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements IW
         String dateStr = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         String uuid = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         return "WORK-" + dateStr + "-" + uuid;
+    }
+
+    private void populateSubmissionFields(Submission submission, WorkAttachment attachment, Work work) {
+        submission.setFileName(attachment.getFileName());
+        submission.setFilePath(attachment.getFilePath());
+        submission.setFileSizeMb(BigDecimal.valueOf(attachment.getFileSize() / (1024.0 * 1024.0)));
+        submission.setVersion(work.getCurrentVersion());
+        submission.setStatus(Submission.SubmissionStatus.VALIDATING);
+        submission.setSubmissionTime(DateTimeConstants.now());
     }
 }

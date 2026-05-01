@@ -3,6 +3,7 @@ package com.example.workcompetitionplatform.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.workcompetitionplatform.dto.ApiResponse;
+import com.example.workcompetitionplatform.dto.CompetitionTimeStatusDTO;
 import com.example.workcompetitionplatform.dto.PageResponse;
 import com.example.workcompetitionplatform.entity.Competition;
 import com.example.workcompetitionplatform.entity.CompetitionTrack;
@@ -99,6 +100,25 @@ public class CompetitionController {
         }
 
         return ApiResponse.success(competition);
+    }
+
+    /**
+     * 查询赛事时间状态
+     * 获取赛事当前所处阶段、剩余时间等信息
+     *
+     * @param id 赛事ID
+     * @return API响应（包含时间状态DTO）
+     */
+    @Operation(summary ="查询赛事时间状态")
+    @GetMapping("/{id}/time-status")
+    public ApiResponse<CompetitionTimeStatusDTO> getCompetitionTimeStatus(@Parameter(description ="赛事ID") @PathVariable Long id) {
+        try {
+            CompetitionTimeStatusDTO timeStatus = competitionService.getTimeStatus(id);
+            return ApiResponse.success(timeStatus);
+        } catch (RuntimeException e) {
+            log.error("查询赛事时间状态失败：{}", id, e);
+            return ApiResponse.error(e.getMessage());
+        }
     }
 
     /**

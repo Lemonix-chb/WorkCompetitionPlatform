@@ -27,9 +27,14 @@
             <!-- Header -->
             <div class="card-header">
               <h3 class="card-title">{{ comp.competitionName }}</h3>
-              <span :class="getStatusClass(comp.status)" class="badge">
-                {{ getStatusText(comp.status) }}
+              <span :class="getStatusClass(comp)" class="badge">
+                {{ getStatusText(comp) }}
               </span>
+            </div>
+
+            <!-- Countdown -->
+            <div v-if="getCountdownText(comp)" class="countdown-section mb-md">
+              <span class="countdown-text accent">{{ getCountdownText(comp) }}</span>
             </div>
 
             <!-- Description -->
@@ -75,8 +80,8 @@
                 </svg>
                 报名参赛
               </button>
-              <button v-else class="btn-secondary" disabled>
-                已截止报名
+              <button v-else class="btn-disabled" disabled>
+                报名已截止
               </button>
             </div>
           </div>
@@ -215,6 +220,7 @@ const selectedTrackId = ref(null)
 const selectedTeamId = ref(null)
 const showRegistrationDialog = ref(false)
 const registering = ref(false)
+const timeStatusMap = ref({})
 
 onMounted(async () => {
   const token = localStorage.getItem('token')
@@ -230,15 +236,27 @@ onMounted(async () => {
     fetchCompetitions(),
     fetchMyRegistrations()
   ])
+
+  await fetchAllTimeStatuses()
 })
+
+const fetchAllTimeStatuses = async () => {
+  const promises = competitions.value.map(comp =>
+    get(`/competitions/${comp.id}/time-status`)
+      .then(status => {
+        timeStatusMap.value[comp.id] = status
+      })
+      .catch(error => {
+        console.error(`Failed to fetch time status for competition ${comp.id}`, error)
+      })
+  )
+  await Promise.all(promises)
+}
 
 const fetchMyRegistrations = async () => {
   try {
     const data = await get('/registrations/my')
-
-    if (data.code === 200) {
-      userRegistrations.value = data.data || []
-    }
+    userRegistrations.value = data || []
   } catch (error) {
     console.error('获取报名记录失败', error)
   }
@@ -247,12 +265,7 @@ const fetchMyRegistrations = async () => {
 const fetchTracks = async (competitionId) => {
   try {
     const data = await get(`/competitions/${competitionId}/tracks`)
-
-    if (data.code === 200) {
-      tracks.value = data.data || []
-    } else {
-      showError('获取赛道失败')
-    }
+    tracks.value = data || []
   } catch (error) {
     showError('获取赛道失败')
   }
@@ -261,18 +274,20 @@ const fetchTracks = async (competitionId) => {
 const fetchUserTeams = async () => {
   try {
     const data = await get('/teams/my')
-
-    if (data.code === 200) {
-      userTeams.value = data.data || []
-    } else {
-      showError('获取团队失败')
-    }
+    userTeams.value = data || []
   } catch (error) {
     showError('获取团队失败')
   }
 }
 
 const handleRegister = async (comp) => {
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (timeStatus && !timeStatus.canRegister) {
+    const endTime = formatDateTime(timeStatus.registrationEnd)
+    showWarning(`报名已截止，截止时间：${endTime}`)
+    return
+  }
+
   selectedCompetition.value = comp
   selectedTrackId.value = null
   selectedTeamId.value = null
@@ -307,16 +322,11 @@ const confirmRegistration = async () => {
       teamId: selectedTeamId.value
     })
 
-    const data = await post(`/registrations?${params.toString()}`)
-
-    if (data.code === 200) {
-      showSuccess('报名成功！')
-      showRegistrationDialog.value = false
-      await fetchMyRegistrations()
-      router.push('/student/teams')
-    } else {
-      showError(data.message || '报名失败')
-    }
+    await post(`/registrations?${params.toString()}`)
+    showSuccess('报名成功！')
+    showRegistrationDialog.value = false
+    await fetchMyRegistrations()
+    router.push('/student/teams')
   } catch (error) {
     showError('报名失败，请稍后重试')
   } finally {
@@ -334,22 +344,46 @@ const getSelectedTeamName = () => {
   return team ? team.teamName : ''
 }
 
-const getStatusClass = (status) => {
+const getStatusClass = (comp) => {
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (!timeStatus) {
+    return {
+      'badge-primary': comp.status === 'PUBLISHED',
+      'badge-warning': comp.status === 'ONGOING',
+      'badge-gray': comp.status === 'FINISHED' || comp.status === 'DRAFT'
+    }
+  }
+
+  const phase = timeStatus.currentPhase
   return {
-    'badge-primary': status === 'PUBLISHED',
-    'badge-warning': status === 'ONGOING',
-    'badge-gray': status === 'FINISHED' || status === 'DRAFT'
+    'badge-primary': phase === 'REGISTRATION',
+    'badge-accent': phase === 'SUBMISSION',
+    'badge-warning': phase === 'REVIEW',
+    'badge-gray': phase === 'FINISHED' || phase === 'BEFORE_REGISTRATION' || phase === 'BEFORE_SUBMISSION'
   }
 }
 
-const getStatusText = (status) => {
+const getStatusText = (comp) => {
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (!timeStatus) {
+    const texts = {
+      DRAFT: '草稿',
+      PUBLISHED: '已发布',
+      ONGOING: '进行中',
+      FINISHED: '已结束'
+    }
+    return texts[comp.status] || comp.status
+  }
+
   const texts = {
-    DRAFT: '草稿',
-    PUBLISHED: '已发布',
-    ONGOING: '进行中',
+    BEFORE_REGISTRATION: '报名未开始',
+    REGISTRATION: '报名进行中',
+    BEFORE_SUBMISSION: '报名已截止',
+    SUBMISSION: '提交进行中',
+    REVIEW: '评审进行中',
     FINISHED: '已结束'
   }
-  return texts[status] || status
+  return texts[timeStatus.currentPhase] || timeStatus.currentPhase
 }
 
 const getTeamStatusText = (status) => {
@@ -368,8 +402,22 @@ const formatDate = (dateStr) => {
   return formatDateTime(dateStr)
 }
 
+const getCountdownText = (comp) => {
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (!timeStatus) return ''
+
+  if (timeStatus.currentPhase === 'REGISTRATION' && timeStatus.registrationDaysRemaining) {
+    return `报名剩余 ${timeStatus.registrationDaysRemaining} 天`
+  }
+  return ''
+}
+
 const canRegister = (comp) => {
-  return comp.status === 'PUBLISHED' || comp.status === 'ONGOING'
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (!timeStatus) {
+    return comp.status === 'PUBLISHED' || comp.status === 'ONGOING'
+  }
+  return timeStatus.canRegister
 }
 
 const isRegistered = (comp) => {
@@ -420,6 +468,29 @@ const isRegistered = (comp) => {
   align-items: flex-start;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+}
+
+.countdown-section {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(90, 127, 168, 0.1);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-text {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-border);
+  color: var(--color-text-secondary);
+  border: none;
+  pointer-events: none;
 }
 
 .info-grid {

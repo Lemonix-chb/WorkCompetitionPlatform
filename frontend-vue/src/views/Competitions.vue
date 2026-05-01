@@ -42,9 +42,14 @@
             <!-- Header -->
             <div class="card-header">
               <h3 class="card-title">{{ comp.competitionName }}</h3>
-              <span :class="getStatusClass(comp.status)" class="badge">
-                {{ getStatusText(comp.status) }}
+              <span :class="getStatusClass(comp)" class="badge">
+                {{ getStatusText(comp) }}
               </span>
+            </div>
+
+            <!-- Countdown -->
+            <div v-if="getCountdownText(comp)" class="countdown-section mb-md">
+              <span class="countdown-text accent">{{ getCountdownText(comp) }}</span>
             </div>
 
             <!-- Description -->
@@ -75,10 +80,19 @@
               <router-link :to="`/competitions/${comp.id}/tracks`" class="link">
                 查看赛道详情
               </router-link>
-              <button v-if="canRegister(comp) && isLoggedIn" class="btn-primary" @click="handleRegister(comp)">
-                {{ userRole === 'STUDENT' ? '报名参赛' : '进入管理' }}
+              <button
+                v-if="isLoggedIn"
+                :disabled="!canRegister(comp)"
+                :class="canRegister(comp) ? 'btn-primary' : 'btn-disabled'"
+                @click="handleRegister(comp)"
+              >
+                {{ canRegister(comp) ? (userRole === 'STUDENT' ? '报名参赛' : '进入管理') : '报名已截止' }}
               </button>
-              <button v-if="canRegister(comp) && !isLoggedIn" class="btn-secondary" @click="handleRegister(comp)">
+              <button
+                v-if="!isLoggedIn && canRegister(comp)"
+                class="btn-secondary"
+                @click="handleRegister(comp)"
+              >
                 登录报名
               </button>
             </div>
@@ -101,11 +115,12 @@
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCompetitionStore } from '../stores/competition'
 import { formatDateTime } from '@/utils/dateUtils'
 import { showSuccess } from '@/utils/messageUtils'
+import { get } from '@/utils/api'
 
 const router = useRouter()
 const store = useCompetitionStore()
@@ -115,6 +130,8 @@ const { competitions, loading, error, fetchCompetitions } = store
 const isLoggedIn = computed(() => localStorage.getItem('token'))
 const userRole = computed(() => localStorage.getItem('userRole'))
 
+const timeStatusMap = ref({})
+
 const userHomePath = computed(() => {
   const role = userRole.value
   if (role === 'STUDENT') return '/student'
@@ -123,34 +140,89 @@ const userHomePath = computed(() => {
   return '/login'
 })
 
-onMounted(() => {
-  fetchCompetitions()
+onMounted(async () => {
+  await fetchCompetitions()
+  await fetchAllTimeStatuses()
 })
+
+const fetchAllTimeStatuses = async () => {
+  const promises = competitions.value.map(comp =>
+    get(`/competitions/${comp.id}/time-status`)
+      .then(status => {
+        timeStatusMap.value[comp.id] = status
+      })
+      .catch(error => {
+        console.error(`Failed to fetch time status for competition ${comp.id}`, error)
+      })
+  )
+  await Promise.all(promises)
+}
 
 const scrollToList = () => {
   document.getElementById('competitions-list').scrollIntoView({ behavior: 'smooth' })
 }
 
-const getStatusClass = (status) => {
+const getStatusClass = (comp) => {
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (!timeStatus) {
+    return {
+      'badge-primary': comp.status === 'PUBLISHED',
+      'badge-warning': comp.status === 'ONGOING',
+      'badge-gray': comp.status === 'FINISHED' || comp.status === 'DRAFT'
+    }
+  }
+
+  const phase = timeStatus.currentPhase
   return {
-    'badge-primary': status === 'PUBLISHED',
-    'badge-warning': status === 'ONGOING',
-    'badge-gray': status === 'FINISHED' || status === 'DRAFT'
+    'badge-primary': phase === 'REGISTRATION',
+    'badge-accent': phase === 'SUBMISSION',
+    'badge-warning': phase === 'REVIEW',
+    'badge-gray': phase === 'FINISHED' || phase === 'BEFORE_REGISTRATION' || phase === 'BEFORE_SUBMISSION'
   }
 }
 
-const getStatusText = (status) => {
+const getStatusText = (comp) => {
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (!timeStatus) {
+    const texts = {
+      DRAFT: '草稿',
+      PUBLISHED: '已发布',
+      ONGOING: '进行中',
+      FINISHED: '已结束'
+    }
+    return texts[comp.status] || comp.status
+  }
+
   const texts = {
-    DRAFT: '草稿',
-    PUBLISHED: '已发布',
-    ONGOING: '进行中',
+    BEFORE_REGISTRATION: '报名未开始',
+    REGISTRATION: '报名进行中',
+    BEFORE_SUBMISSION: '报名已截止',
+    SUBMISSION: '提交进行中',
+    REVIEW: '评审进行中',
     FINISHED: '已结束'
   }
-  return texts[status] || status
+  return texts[timeStatus.currentPhase] || timeStatus.currentPhase
 }
 
 const canRegister = (comp) => {
-  return comp.status === 'PUBLISHED' || comp.status === 'ONGOING'
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (!timeStatus) {
+    return comp.status === 'PUBLISHED' || comp.status === 'ONGOING'
+  }
+  return timeStatus.canRegister
+}
+
+const getCountdownText = (comp) => {
+  const timeStatus = timeStatusMap.value[comp.id]
+  if (!timeStatus) return ''
+
+  if (timeStatus.currentPhase === 'REGISTRATION' && timeStatus.registrationDaysRemaining) {
+    return `报名剩余 ${timeStatus.registrationDaysRemaining} 天`
+  }
+  if (timeStatus.currentPhase === 'SUBMISSION' && timeStatus.submissionDaysRemaining) {
+    return `提交剩余 ${timeStatus.submissionDaysRemaining} 天`
+  }
+  return ''
 }
 
 const handleRegister = (comp) => {
@@ -160,7 +232,6 @@ const handleRegister = (comp) => {
     router.push('/login')
   } else {
     const userRole = localStorage.getItem('userRole')
-    // 根据角色跳转，学生跳转到赛道报名，其他角色跳转到管理中心
     if (userRole === 'STUDENT') {
       router.push(`/competitions/${comp.id}/tracks`)
     } else if (userRole === 'JUDGE') {
@@ -248,6 +319,29 @@ const handleRegister = (comp) => {
   align-items: flex-start;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+}
+
+.countdown-section {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(90, 127, 168, 0.1);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-text {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-border);
+  color: var(--color-text-secondary);
+  border: none;
+  pointer-events: none;
 }
 
 .info-grid {

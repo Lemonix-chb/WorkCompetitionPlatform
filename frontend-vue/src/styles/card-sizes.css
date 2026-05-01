@@ -1,0 +1,472 @@
+/* ============================================
+   Unified Card Size System
+   统一卡片尺寸系统
+   确保所有卡片在布局中保持一致大小
+   ============================================ */
+
+/* === 卡片尺寸标准化 === */
+
+/* 1. 基础卡片尺寸 - 标准模式 */
+
+/* 小卡片 - 紧凑场景 */
+.card-xs,
+.card-small {
+  min-height: 120px;
+  padding: var(--spacing-md);
+}
+
+/* 标准卡片 - 默认尺寸 */
+.card-sm,
+.card-standard {
+  min-height: 180px;
+  padding: var(--spacing-lg);
+}
+
+/* 中等卡片 - 常用尺寸 */
+.card-md,
+.card-medium {
+  min-height: 240px;
+  padding: var(--spacing-xl);
+}
+
+/* 大卡片 - 重要内容 */
+.card-lg,
+.card-large {
+  min-height: 320px;
+  padding: var(--spacing-2xl);
+}
+
+/* 超大卡片 - 特殊场景 */
+.card-xl,
+.card-extra-large {
+  min-height: 400px;
+  padding: var(--spacing-3xl);
+}
+
+/* === 统计卡片固定尺寸 === */
+
+/* 统计卡片 - 标准高度 */
+.stat-card {
+  min-height: 200px !important;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl) !important;
+}
+
+/* 统计卡片 - 小尺寸 */
+.stat-card-sm {
+  min-height: 160px !important;
+  height: 160px;
+  padding: var(--spacing-lg) !important;
+}
+
+/* 统计卡片 - 大尺寸 */
+.stat-card-lg {
+  min-height: 240px !important;
+  height: 240px;
+  padding: var(--spacing-2xl) !important;
+}
+
+/* === 操作卡片固定尺寸 === */
+
+/* 操作卡片 - 标准高度 */
+.action-card {
+  min-height: 80px !important;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-lg) !important;
+}
+
+/* 操作卡片 - 小尺寸 */
+.action-card-sm {
+  min-height: 64px !important;
+  height: 64px;
+  padding: var(--spacing-md) !important;
+}
+
+/* 操作卡片 - 大尺寸 */
+.action-card-lg {
+  min-height: 100px !important;
+  height: 100px;
+  padding: var(--spacing-xl) !important;
+}
+
+/* === 数据卡片固定尺寸 === */
+
+/* 数据展示卡片 */
+.data-card {
+  min-height: 160px;
+  height: auto;
+  padding: var(--spacing-lg);
+}
+
+/* 表格卡片 - 无固定高度 */
+.table-card,
+.data-table {
+  min-height: auto;
+  height: auto;
+  padding: var(--spacing-xl);
+}
+
+/* === 网格卡片统一高度 === */
+
+/* 强制网格内卡片等高 */
+.grid-equal > .card,
+.grid-2.grid-equal > .card,
+.grid-3.grid-equal > .card,
+.grid-4.grid-equal > .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 网格卡片底部内容自动填充 */
+.grid-equal > .card > .card-footer,
+.grid-equal > .card > .card-actions {
+  margin-top: auto;
+}
+
+/* === 卡片内容布局标准化 === */
+
+/* 卡片头部 */
+.card-header {
+  padding-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* 卡片主体 */
+.card-body {
+  flex: 1;
+  padding: 0;
+}
+
+/* 卡片底部 */
+.card-footer,
+.card-actions {
+  padding-top: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+/* === 特殊卡片尺寸 === */
+
+/* 表单卡片 */
+.form-card {
+  min-height: 360px;
+  padding: var(--spacing-2xl);
+}
+
+/* 详情卡片 */
+.detail-card {
+  min-height: 280px;
+  padding: var(--spacing-2xl);
+}
+
+/* 空状态卡片 */
+.empty-card {
+  min-height: 320px;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 加载卡片 */
+.loading-card {
+  min-height: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === 响应式卡片尺寸 === */
+
+/* 小屏幕自动调整 */
+@media (max-width: 768px) {
+  .card-xs,
+  .card-small {
+    min-height: 100px;
+  }
+
+  .card-sm,
+  .card-standard {
+    min-height: 150px;
+  }
+
+  .card-md,
+  .card-medium {
+    min-height: 200px;
+  }
+
+  .card-lg,
+  .card-large {
+    min-height: 280px;
+  }
+
+  .stat-card {
+    min-height: 160px !important;
+    height: 160px;
+  }
+
+  .action-card {
+    min-height: 70px !important;
+    height: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-xs,
+  .card-small {
+    min-height: 80px;
+    padding: var(--spacing-sm);
+  }
+
+  .card-sm,
+  .card-standard {
+    min-height: 120px;
+    padding: var(--spacing-md);
+  }
+
+  .card-md,
+  .card-medium {
+    min-height: 160px;
+    padding: var(--spacing-lg);
+  }
+
+  .stat-card {
+    min-height: 140px !important;
+    height: 140px;
+  }
+
+  .action-card {
+    min-height: 60px !important;
+    height: 60px;
+  }
+}
+
+/* === 卡片内容密度控制 === */
+
+/* 紧凑内容 */
+.card-content-compact {
+  padding: var(--spacing-sm);
+}
+
+.card-content-compact .card-title {
+  margin-bottom: var(--spacing-sm);
+}
+
+/* 标准内容 */
+.card-content-standard {
+  padding: var(--spacing-md);
+}
+
+/* 宽松内容 */
+.card-content-relaxed {
+  padding: var(--spacing-lg);
+}
+
+/* === 卡片固定高度模式 === */
+
+/* 固定高度 - 不允许内容撑开 */
+.card-fixed {
+  height: var(--card-height, 200px);
+  min-height: var(--card-height, 200px);
+  max-height: var(--card-height, 200px);
+  overflow: hidden;
+}
+
+/* 固定高度 + 内容溢出滚动 */
+.card-fixed-scroll {
+  height: var(--card-height, 200px);
+  min-height: var(--card-height, 200px);
+  max-height: var(--card-height, 200px);
+  overflow-y: auto;
+}
+
+/* 自定义卡片高度 */
+.card-height-xs { --card-height: 120px; }
+.card-height-sm { --card-height: 180px; }
+.card-height-md { --card-height: 240px; }
+.card-height-lg { --card-height: 320px; }
+.card-height-xl { --card-height: 400px; }
+
+/* === 卡片弹性高度模式 === */
+
+/* 最小高度 + 内容自适应 */
+.card-flexible {
+  min-height: var(--card-min-height, 160px);
+  height: auto;
+}
+
+/* 最小/最大高度范围 */
+.card-range {
+  min-height: var(--card-min-height, 160px);
+  max-height: var(--card-max-height, 320px);
+  overflow-y: auto;
+}
+
+/* === 卡片对齐方式 === */
+
+/* 内容顶部对齐 */
+.card-align-top {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* 内容居中对齐 */
+.card-align-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 内容底部对齐 */
+.card-align-bottom {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* 内容垂直分布 */
+.card-align-stretch {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* === 网格卡片统一高度工具类 === */
+
+/* 2列网格卡片等高 */
+.grid-2-equal {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+  align-items: stretch;
+}
+
+.grid-2-equal > .card {
+  height: 100%;
+}
+
+/* 3列网格卡片等高 */
+.grid-3-equal {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+  align-items: stretch;
+}
+
+.grid-3-equal > .card {
+  height: 100%;
+}
+
+/* 4列网格卡片等高 */
+.grid-4-equal {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+  align-items: stretch;
+}
+
+.grid-4-equal > .card {
+  height: 100%;
+}
+
+@media (max-width: 1024px) {
+  .grid-3-equal {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-2-equal,
+  .grid-3-equal,
+  .grid-4-equal {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === 卡片装饰标准化 === */
+
+/* 所有卡片统一装饰 */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  background: var(--color-accent);
+  transition: height var(--transition-fast);
+  opacity: 0;
+}
+
+/* 悬停时显示顶部装饰线 */
+.card-hover:hover::before,
+.card-interactive:hover::before {
+  height: 3px;
+  opacity: 1;
+}
+
+/* === 卡片阴影统一 === */
+
+/* 标准阴影 */
+.card-shadow-standard {
+  box-shadow: var(--shadow-card);
+}
+
+/* 悬停阴影 */
+.card-shadow-hover {
+  box-shadow: var(--shadow-elevated);
+}
+
+/* 无阴影 */
+.card-shadow-none {
+  box-shadow: none;
+}
+
+/* === 卡片边框统一 === */
+
+/* 标准边框 */
+.card-border-standard {
+  border: 1px solid var(--color-border);
+}
+
+/* 强调边框 */
+.card-border-accent {
+  border: 2px solid var(--color-accent);
+}
+
+/* 无边框 */
+.card-border-none {
+  border: none;
+}
+
+/* === 实用工具类 === */
+
+/* 确保卡片内容不溢出 */
+.card-truncate-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 卡片内容自动换行 */
+.card-wrap-content {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* 卡片内容滚动 */
+.card-scroll-content {
+  overflow-y: auto;
+  max-height: 100%;
+}

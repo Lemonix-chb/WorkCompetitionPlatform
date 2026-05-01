@@ -1,0 +1,678 @@
+/* ============================================
+   学术评审专业设计系统
+   Academic Competition Review System
+   专为竞赛评审设计的专业界面
+   ============================================ */
+
+/* === 导入独特字体 === */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+/* === CSS变量定义 - 学术专业配色 === */
+
+:root {
+  /* === 主色系 - 学术权威 === */
+  --color-primary: #0d2137;           /* 深藏青 - 学术权威 */
+  --color-primary-medium: #1e3a5f;    /* 中藏青 */
+  --color-primary-light: #2c5f7c;     /* 浅藏青 */
+
+  /* === 强调色 - 专业蓝色 === */
+  --color-accent: #3498db;            /* 强调蓝 */
+  --color-accent-light: #5dade2;      /* 浅蓝 */
+  --color-accent-dark: #2980b9;       /* 深蓝 */
+
+  /* === 评审状态色系 - 流程可视化 === */
+  --status-pending: #7f8c8d;          /* 待审 - 中性灰 */
+  --status-reviewing: #f39c12;        /* 评审中 - 琥珀 */
+  --status-completed: #27ae60;        /* 已完成 - 深绿 */
+  --status-ai-review: #3498db;        /* AI初审 - 科技蓝 */
+  --status-awarded: #2980b9;          /* 已获奖 - 深蓝 */
+  --status-rejected: #e74c3c;         /* 已拒绝 - 红色 */
+
+  /* === 背景色 - 温暖米白 === */
+  --color-bg-main: #faf8f5;           /* 米白背景 */
+  --color-bg-white: #ffffff;          /* 纯白 */
+  --color-bg-warm: #f7f5f2;           /* 温暖灰 */
+  --color-bg-card: #ffffff;           /* 卡片背景 */
+  --color-bg-sidebar: #0d2137;        /* 侧边栏藏青 */
+
+  /* === 文本色 === */
+  --color-text-primary: #0d2137;      /* 主文本藏青 */
+  --color-text-secondary: #4a5568;    /* 次文本灰 */
+  --color-text-tertiary: #718096;     /* 三级文本 */
+  --color-text-light: #a0aec0;        /* 浅文本 */
+  --color-text-white: #ffffff;        /* 白文本 */
+  --color-text-accent: #3498db;       /* 强调文本 */
+
+  /* === 边框与分隔 === */
+  --color-border: #e2e0d8;            /* 温暖边框 */
+  --color-border-light: #ebe9e3;      /* 浅边框 */
+  --color-divider: #d4d2c8;           /* 分隔线 */
+
+  /* === 专业阴影 === */
+  --shadow-subtle: 0 2px 4px rgba(13, 33, 55, 0.06);
+  --shadow-card: 0 4px 12px rgba(13, 33, 55, 0.08);
+  --shadow-elevated: 0 8px 24px rgba(13, 33, 55, 0.12);
+  --shadow-accent: 0 4px 16px rgba(52, 152, 219, 0.15);
+
+  /* === 字体 - 专业学术 === */
+  --font-display: 'Cormorant Garamond', 'Times New Roman', serif;  /* 标题衬线 */
+  --font-body: 'IBM Plex Sans', 'Segoe UI', sans-serif;            /* 正文无衬线 */
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;          /* 等宽字体 */
+
+  /* === 字号系统 === */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 15px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 20px;
+  --text-3xl: 24px;
+  --text-4xl: 28px;
+  --text-5xl: 32px;
+  --text-display: 36px;
+  --text-hero: 48px;
+
+  /* === 间距系统 === */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+  --spacing-4xl: 64px;
+
+  /* === 圆角系统 === */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+
+  /* === 侧边栏 === */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 72px;
+
+  /* === 过渡 === */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* === Z-index层级 === */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+}
+
+/* === 全局基础样式 === */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+  background: var(--color-bg-main);
+
+  /* 专业字体渲染 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+
+  /* 学术质感 */
+  background-image:
+    linear-gradient(135deg, rgba(13, 33, 55, 0.02) 0%, transparent 100%);
+}
+
+/* === 专业排版系统 === */
+
+/* 页面主标题 - 衬线字体权威感 */
+.page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-xl);
+  letter-spacing: -0.03em;
+
+  /* 学术装饰 */
+  position: relative;
+  padding-bottom: var(--spacing-lg);
+}
+
+.page-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: var(--color-accent);
+}
+
+/* 区块标题 */
+.section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 500;
+  color: var(--color-primary-medium);
+  margin-bottom: var(--spacing-lg);
+  letter-spacing: -0.02em;
+}
+
+/* 卡片标题 */
+.card-title {
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+/* 正文 */
+.body-text {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 400;
+  color: var(--color-text-primary);
+  line-height: 1.7;
+}
+
+/* 说明文字 */
+.caption {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* 微小文字 */
+.micro {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+/* === 容器系统 === */
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-3xl) var(--spacing-2xl);
+}
+
+.container-sm {
+  max-width: 900px;
+}
+
+.container-lg {
+  max-width: 1600px;
+}
+
+/* === 专业卡片系统 === */
+
+.card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--color-border-light);
+
+  /* 专业阴影 */
+  box-shadow: var(--shadow-card);
+
+  /* 温暖过渡 */
+  transition: all var(--transition-base);
+}
+
+/* 可交互卡片 */
+.card-interactive {
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-2px);
+  border-color: var(--color-accent);
+}
+
+/* 扁平卡片（无阴影） */
+.card-flat {
+  box-shadow: none;
+  border: 1px solid var(--color-border);
+}
+
+/* 强调卡片 */
+.card-accent {
+  border-left: 4px solid var(--color-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.card-accent:hover {
+  box-shadow: 0 8px 32px rgba(52, 152, 219, 0.2);
+}
+
+/* === 链接系统 === */
+
+.link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.link:hover {
+  color: var(--color-primary);
+}
+
+.link-accent {
+  color: var(--color-accent);
+}
+
+.link-accent:hover {
+  color: var(--color-accent-dark);
+}
+
+/* === 状态徽章系统 - 评审流程可视化 === */
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* 待审状态 */
+.badge-pending {
+  background: rgba(127, 140, 141, 0.12);
+  color: var(--status-pending);
+  border: 1px solid rgba(127, 140, 141, 0.2);
+}
+
+/* 评审中状态 */
+.badge-reviewing {
+  background: rgba(243, 156, 18, 0.12);
+  color: var(--status-reviewing);
+  border: 1px solid rgba(243, 156, 18, 0.3);
+}
+
+/* 已完成状态 */
+.badge-completed {
+  background: rgba(39, 174, 96, 0.12);
+  color: var(--status-completed);
+  border: 1px solid rgba(39, 174, 96, 0.3);
+}
+
+/* AI初审状态 */
+.badge-ai {
+  background: rgba(52, 152, 219, 0.12);
+  color: var(--status-ai-review);
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+/* 已获奖状态 */
+.badge-awarded {
+  background: rgba(41, 128, 185, 0.15);
+  color: var(--status-awarded);
+  border: 1px solid var(--color-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+/* === 网格系统 === */
+
+.grid {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-5 { grid-template-columns: repeat(5, 1fr); }
+.grid-auto { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+
+/* === 表单系统 === */
+
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+  display: block;
+  letter-spacing: 0.01em;
+}
+
+.form-input {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+
+  padding: 12px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+
+  background: var(--color-bg-white);
+  color: var(--color-text-primary);
+  width: 100%;
+
+  transition: all var(--transition-fast);
+}
+
+.form-input:hover {
+  border-color: var(--color-text-tertiary);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 0 4px rgba(52, 152, 219, 0.1),
+    var(--shadow-subtle);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-light);
+}
+
+/* === 动画系统 - 专业入场 === */
+
+/* 淡入 */
+.fade-in {
+  animation: fadeIn var(--transition-base);
+}
+
+/* 滑入 */
+.slide-in {
+  animation: slideIn var(--transition-slow);
+}
+
+/* 缩放进入 */
+.scale-in {
+  animation: scaleIn var(--transition-spring);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* === 实用工具类 === */
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mb-xl { margin-bottom: var(--spacing-xl); }
+.mb-2xl { margin-bottom: var(--spacing-2xl); }
+
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+.mt-xl { margin-top: var(--spacing-xl); }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-center { align-items: center; justify-content: center; }
+.flex-between { justify-content: space-between; }
+.flex-wrap { flex-wrap: wrap; }
+
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+.gap-xl { gap: var(--spacing-xl); }
+
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+/* === 响应式系统 === */
+
+@media (max-width: 1200px) {
+  .container {
+    padding: var(--spacing-2xl) var(--spacing-xl);
+  }
+
+  .grid-5 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: var(--sidebar-collapsed);
+  }
+
+  .grid-4, .grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .page-title {
+    font-size: var(--text-4xl);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 260px; /* 移动端展开 */
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar-open {
+    transform: translateX(0);
+  }
+
+  .container {
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+
+  .grid-2, .grid-3, .grid-4, .grid-5 {
+    grid-template-columns: 1fr;
+  }
+
+  .page-title {
+    font-size: var(--text-3xl);
+  }
+
+  .section-title {
+    font-size: var(--text-2xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
+  .card {
+    padding: var(--spacing-lg);
+  }
+
+  .page-title {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* === 特殊组件 - 评审进度条 === */
+
+.review-progress {
+  position: relative;
+  height: 8px;
+  background: rgba(127, 140, 141, 0.1);
+  border-radius: var(--radius-md);
+}
+
+.progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: var(--radius-md);
+  transition: width var(--transition-slow);
+}
+
+.progress-fill.pending {
+  background: var(--status-pending);
+}
+
+.progress-fill.reviewing {
+  background: var(--status-reviewing);
+}
+
+.progress-fill.completed {
+  background: var(--status-completed);
+}
+
+.progress-fill.awarded {
+  background: var(--status-awarded);
+  box-shadow: var(--shadow-accent);
+}
+
+/* === 特殊组件 - 统计卡片 === */
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.stat-icon {
+  margin-bottom: var(--spacing-md);
+  opacity: 0.7;
+}
+
+.stat-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.stat-number {
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: -0.04em;
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat-card:hover .stat-number {
+  color: var(--color-accent);
+}
+
+/* === 特殊组件 - 评审状态指示器 === */
+
+.status-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding-left: 24px;
+}
+
+.status-indicator::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid;
+  transition: all var(--transition-base);
+}
+
+.status-indicator.pending::before {
+  background: transparent;
+  border-color: var(--status-pending);
+}
+
+.status-indicator.reviewing::before {
+  background: var(--status-reviewing);
+  border-color: var(--status-reviewing);
+  animation: pulse 2s ease infinite;
+}
+
+.status-indicator.completed::before {
+  background: var(--status-completed);
+  border-color: var(--status-completed);
+}
+
+.status-indicator.awarded::before {
+  background: var(--status-awarded);
+  border-color: var(--status-awarded);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}

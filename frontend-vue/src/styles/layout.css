@@ -1,0 +1,503 @@
+/* ============================================
+   Layout Optimization System
+   前端界面布局排版优化系统
+   专为竞赛评审管理系统设计
+   ============================================ */
+
+/* === 页面结构优化 === */
+
+/* 1. 容器系统 - 响应式内边距 */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--spacing-3xl) var(--spacing-2xl);
+}
+
+/* 大屏幕 - 宽松布局 */
+@media (min-width: 1600px) {
+  .container {
+    max-width: 1600px;
+    padding: var(--spacing-4xl) var(--spacing-3xl);
+  }
+}
+
+/* 中等屏幕 - 标准布局 */
+@media (max-width: 1400px) {
+  .container {
+    max-width: 1200px;
+    padding: var(--spacing-2xl) var(--spacing-xl);
+  }
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+}
+
+/* 小屏幕 - 紧凑布局 */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: var(--spacing-md) var(--spacing-sm);
+  }
+}
+
+/* === 页面头部优化 === */
+
+.page-header {
+  margin-bottom: var(--spacing-3xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.page-title {
+  margin-bottom: var(--spacing-md);
+  line-height: 1.2;
+}
+
+/* 标题装饰线 */
+.page-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: var(--color-accent);
+  margin-top: var(--spacing-md);
+  border-radius: 2px;
+}
+
+.section-title {
+  margin-bottom: var(--spacing-lg);
+  margin-top: var(--spacing-2xl);
+  position: relative;
+  padding-left: var(--spacing-md);
+}
+
+/* 区块标题左侧装饰 */
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 2px;
+}
+
+/* === 卡片系统优化 === */
+
+.card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+/* 卡片间距优化 */
+.card + .card {
+  margin-top: var(--spacing-lg);
+}
+
+/* 卡片标题统一 */
+.card-title {
+  margin-bottom: var(--spacing-md);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* 可交互卡片 */
+.card-interactive,
+.card-hover {
+  cursor: pointer;
+}
+
+.card-interactive:hover,
+.card-hover:hover {
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-3px);
+  border-color: var(--color-accent);
+}
+
+/* 扁平卡片 */
+.card-flat {
+  box-shadow: none;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-white);
+}
+
+/* 紧凑卡片 */
+.card-compact {
+  padding: var(--spacing-lg);
+}
+
+/* === 网格系统优化 === */
+
+.grid {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+/* 2列网格 - 中等间距 */
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-xl);
+}
+
+@media (max-width: 768px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+}
+
+/* 3列网格 */
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 1024px) {
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 4列网格 - 统计卡片 */
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 1200px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 自适应网格 */
+.grid-auto {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .grid-auto {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === 区块间距优化 === */
+
+/* 区块容器 */
+.section,
+.section-wrapper {
+  margin-bottom: var(--spacing-3xl);
+}
+
+/* 区块标题 */
+.section-header {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* 区块内容 */
+.section-content {
+  padding: var(--spacing-xl) 0;
+}
+
+/* === 表格页面优化 === */
+
+/* 表格容器 */
+.data-table {
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
+}
+
+/* 表格上方筛选区 */
+.filters-section,
+.filters-wrapper {
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg);
+}
+
+.filters-row {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters-row > * {
+    width: 100%;
+  }
+}
+
+/* === 统计卡片优化 === */
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--spacing-xl);
+  position: relative;
+}
+
+.stat-icon {
+  margin-bottom: var(--spacing-md);
+  opacity: 0.8;
+  transition: opacity var(--transition-fast);
+}
+
+.stat-card:hover .stat-icon {
+  opacity: 1;
+}
+
+.stat-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.stat-number {
+  font-family: var(--font-display);
+  font-size: var(--text-5xl);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: -0.04em;
+}
+
+.stat-card:hover .stat-number {
+  color: var(--color-accent);
+  transform: scale(1.05);
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* === 操作卡片优化 === */
+
+.action-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-base);
+}
+
+.action-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: rgba(52, 152, 219, 0.08);
+  flex-shrink: 0;
+}
+
+.action-card:hover .action-icon {
+  background: rgba(52, 152, 219, 0.15);
+}
+
+.action-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.action-content h3 {
+  margin-bottom: var(--spacing-xs);
+}
+
+.action-arrow {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(127, 140, 141, 0.08);
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.action-card:hover .action-arrow {
+  background: var(--color-accent);
+  color: white;
+  transform: translateX(4px);
+}
+
+.action-card:hover .action-arrow svg {
+  stroke: white;
+}
+
+/* === 空状态优化 === */
+
+.empty-state {
+  padding: var(--spacing-3xl) var(--spacing-xl);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon {
+  margin-bottom: var(--spacing-xl);
+  opacity: 0.5;
+}
+
+.empty-icon svg {
+  width: 64px;
+  height: 64px;
+}
+
+.empty-state h3 {
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+.empty-state p {
+  color: var(--color-text-tertiary);
+}
+
+/* === 加载状态优化 === */
+
+.loading-state {
+  padding: var(--spacing-3xl);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--spacing-lg);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* === 响应式优化总结 === */
+
+/* 桌面端(≥1200px) - 宽松布局 */
+/* 笔记本(1024px-1200px) - 标准布局 */
+/* 平板(768px-1024px) - 紧凑布局 */
+/* 手机(<768px) - 单列布局 */
+
+/* === 内容密度优化 === */
+
+/* 紧凑模式 */
+.compact-mode .card {
+  padding: var(--spacing-md);
+}
+
+.compact-mode .container {
+  padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.compact-mode .grid {
+  gap: var(--spacing-md);
+}
+
+/* 宽松模式 */
+.relaxed-mode .card {
+  padding: var(--spacing-2xl);
+}
+
+.relaxed-mode .container {
+  padding: var(--spacing-4xl) var(--spacing-3xl);
+}
+
+.relaxed-mode .grid {
+  gap: var(--spacing-xl);
+}
+
+/* === 特殊布局场景 === */
+
+/* 表格详情页 */
+.detail-page {
+  padding: var(--spacing-xl);
+}
+
+.detail-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.detail-section {
+  margin-bottom: var(--spacing-2xl);
+  padding: var(--spacing-xl);
+}
+
+/* 分栏布局 */
+.two-column-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+@media (max-width: 1024px) {
+  .two-column-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 主次布局 */
+.main-side-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+@media (max-width: 1024px) {
+  .main-side-layout {
+    grid-template-columns: 1fr;
+  }
+}

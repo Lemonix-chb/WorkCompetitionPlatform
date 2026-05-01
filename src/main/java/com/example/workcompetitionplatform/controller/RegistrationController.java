@@ -2,11 +2,14 @@ package com.example.workcompetitionplatform.controller;
 
 import com.example.workcompetitionplatform.annotation.RateLimit;
 import com.example.workcompetitionplatform.dto.ApiResponse;
+import com.example.workcompetitionplatform.entity.Competition;
 import com.example.workcompetitionplatform.entity.Registration;
 import com.example.workcompetitionplatform.entity.Team;
+import com.example.workcompetitionplatform.mapper.CompetitionMapper;
 import com.example.workcompetitionplatform.mapper.RegistrationMapper;
 import com.example.workcompetitionplatform.mapper.TeamMapper;
 import com.example.workcompetitionplatform.service.ITeamService;
+import com.example.workcompetitionplatform.util.DateTimeConstants;
 import com.example.workcompetitionplatform.util.UserContext;
 import com.example.workcompetitionplatform.util.WorkCodeGenerator;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,6 +42,9 @@ public class RegistrationController {
 
     @Autowired
     private TeamMapper teamMapper;
+
+    @Autowired
+    private CompetitionMapper competitionMapper;
 
     @Autowired
     private ITeamService teamService;
@@ -88,6 +94,16 @@ public class RegistrationController {
             if (team.getStatus() != Team.TeamStatus.CONFIRMED &&
                 team.getStatus() != Team.TeamStatus.REGISTERED) {
                 return ApiResponse.error("团队状态不符合报名要求，请先确认团队");
+            }
+
+            // 检查是否在报名期内（使用预加载的competition避免重复查询）
+            Competition competition = competitionMapper.selectById(competitionId);
+            LocalDateTime now = DateTimeConstants.now();
+            if (!now.isAfter(competition.getRegistrationStart()) ||
+                !now.isBefore(competition.getRegistrationEnd())) {
+                String endTime = competition.getRegistrationEnd()
+                    .format(DateTimeConstants.STANDARD_FORMAT);
+                return ApiResponse.error("报名已截止，截止时间：" + endTime);
             }
 
             // 创建报名记录
