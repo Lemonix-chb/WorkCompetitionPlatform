@@ -1,0 +1,21 @@
+# AI Agent Service Configuration
+
+deepseek_api_key: "sk-325ae1ccf357480ab353a41e8b26ee32"
+deepseek_api_url: "https://api.deepseek.com/v1/chat/completions"
+deepseek_model: "deepseek-chat"
+
+spring_boot_api_url: "http://localhost:8080/api"
+
+jplag_docker_image: "jplag/jplag:latest"
+checkstyle_docker_image: "checkstyle/checkstyle:latest"
+
+uploads_dir: "./uploads"
+temp_dir: "./temp"
+
+log_level: "INFO"
+
+jplag_timeout: 30
+checkstyle_timeout: 30
+deepseek_timeout: 30
+
+agent_verbose: true

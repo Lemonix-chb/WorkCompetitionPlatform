@@ -1,0 +1,39 @@
+INFO:     Started server process [27536]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
+INFO:     127.0.0.1:3247 - "GET /health HTTP/1.1" 200 OK
+2026-04-22 22:21:43,304 - INFO - \U0001f680 Sync review started for submission 1
+2026-04-22 22:21:43,315 - WARNING - Python-dotenv could not parse statement starting at line 2
+2026-04-22 22:21:43,315 - WARNING - Python-dotenv could not parse statement starting at line 4
+2026-04-22 22:21:43,315 - WARNING - Python-dotenv could not parse statement starting at line 5
+2026-04-22 22:21:43,315 - WARNING - Python-dotenv could not parse statement starting at line 6
+2026-04-22 22:21:43,323 - WARNING - Python-dotenv could not parse statement starting at line 8
+2026-04-22 22:21:43,323 - WARNING - Python-dotenv could not parse statement starting at line 10
+2026-04-22 22:21:43,323 - WARNING - Python-dotenv could not parse statement starting at line 11
+2026-04-22 22:21:43,323 - WARNING - Python-dotenv could not parse statement starting at line 13
+2026-04-22 22:21:43,323 - WARNING - Python-dotenv could not parse statement starting at line 14
+2026-04-22 22:21:43,323 - WARNING - Python-dotenv could not parse statement starting at line 16
+2026-04-22 22:21:43,324 - WARNING - Python-dotenv could not parse statement starting at line 18
+2026-04-22 22:21:43,324 - WARNING - Python-dotenv could not parse statement starting at line 19
+2026-04-22 22:21:43,324 - WARNING - Python-dotenv could not parse statement starting at line 20
+2026-04-22 22:21:43,388 - INFO - \U0001f4dd Step 1: Agent review
+2026-04-22 22:21:43,388 - INFO - Initializing AI Review Agent...
+2026-04-22 22:21:43,388 - INFO - AI Review Agent initialized successfully
+2026-04-22 22:21:43,388 - INFO - Reviewing work: submission_id=1, work_type=CODE
+2026-04-22 22:21:43,388 - INFO - Review completed for submission 1
+2026-04-22 22:21:43,388 - INFO - \u2705 Agent result: 85.0
+2026-04-22 22:21:43,388 - INFO - \U0001f4ca Step 2: Compile report
+2026-04-22 22:21:43,388 - INFO - Compiling AI review report...
+2026-04-22 22:21:43,388 - INFO - Report compiled: overallScore=85.0, riskLevel=LOW
+2026-04-22 22:21:43,388 - INFO - \u2705 Report: overallScore=85.0
+2026-04-22 22:21:43,388 - INFO - \U0001f310 Step 3: Send callback
+2026-04-22 22:21:43,388 - INFO - Callback service initialized with Spring Boot URL: http://localhost:8080/api
+2026-04-22 22:21:43,388 - INFO - \U0001f310 Sending callback to http://localhost:8080/api/ai-reviews/callback for submission 1
+2026-04-22 22:21:43,388 - INFO - \U0001f4e6 Report serialized (Pydantic V2): ['overallScore', 'innovationScore', 'practicalityScore', 'userExperienceScore', 'documentationScore', 'duplicateRate', 'codeQualityScore', 'reviewSummary', 'improvementSuggestions', 'aiModel', 'riskLevel']
+2026-04-22 22:21:43,388 - INFO - \U0001f4e4 Callback payload: submissionId=1, overallScore=85.0
+2026-04-22 22:21:44,107 - INFO - HTTP Request: POST http://localhost:8080/api/ai-reviews/callback "HTTP/1.1 200 "
+2026-04-22 22:21:44,109 - INFO - \U0001f4e5 Spring Boot response: status=200
+2026-04-22 22:21:44,109 - INFO - \u2705 Callback successful for submission 1
+2026-04-22 22:21:44,110 - INFO - \U0001f389 Complete success!
+INFO:     127.0.0.1:3357 - "POST /api/review-sync HTTP/1.1" 200 OK

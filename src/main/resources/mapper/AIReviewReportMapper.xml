@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.AIReviewReportMapper">
+
+    <select id="selectBySubmissionId" resultType="com.example.workcompetitionplatform.entity.AIReviewReport">
+        SELECT * FROM ai_review_report
+        WHERE submission_id = #{submissionId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectByCompetitionTrackId" resultType="com.example.workcompetitionplatform.entity.AIReviewReport">
+        SELECT r.* FROM ai_review_report r
+        INNER JOIN submission s ON r.submission_id = s.id
+        INNER JOIN work w ON s.work_id = w.id
+        WHERE w.competition_track_id = #{competitionTrackId}
+    </select>
+
+    <select id="selectByReviewStatus" resultType="com.example.workcompetitionplatform.entity.AIReviewReport">
+        SELECT * FROM ai_review_report
+        WHERE review_status = #{reviewStatus}
+    </select>
+
+    <select id="selectByCompetitionId" resultType="com.example.workcompetitionplatform.entity.AIReviewReport">
+        SELECT r.* FROM ai_review_report r
+        INNER JOIN submission s ON r.submission_id = s.id
+        INNER JOIN work w ON s.work_id = w.id
+        WHERE w.competition_id = #{competitionId}
+    </select>
+
+</mapper>

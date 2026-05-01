@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  # Spring Boot后端应用
+  work-competition-platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: work-competition-platform
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=work_competition_platform
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=123456
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - mysql
+      - redis
+      - ai-agent
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - competition-network
+
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: competition-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=work_competition_platform
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/init_database.sql:/docker-entrypoint-initdb.d/init_database.sql
+      - ./database/insert_ai_config.sql:/docker-entrypoint-initdb.d/insert_ai_config.sql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - competition-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: competition-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - competition-network
+
+  # Python AI审核Agent微服务
+  ai-agent:
+    build:
+      context: ./ai-agent-service
+      dockerfile: Dockerfile
+    container_name: competition-ai-agent
+    ports:
+      - "8001:8001"
+    environment:
+      - DEEPSEEK_API_KEY=sk-325ae1ccf357480ab353a41e8b26ee32
+      - SPRING_BOOT_API_URL=http://work-competition-platform:8080/api
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./uploads:/app/uploads
+      - ./ai-agent-service/config.yaml:/app/config.yaml
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - competition-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # 注意：JPlag和Checkstyle是按需调用的Docker工具，不是持续运行的服务
+  # Python Agent会在AI审核时动态执行: docker run jplag/jplag / checkstyle/checkstyle
+  # 请确保这些镜像已拉取: docker pull jplag/jplag:latest checkstyle/checkstyle:latest
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  competition-network:
+    driver: bridge
