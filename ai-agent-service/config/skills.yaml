@@ -1,0 +1,130 @@
+# Skills Configuration
+# 技能配置文件：定义AI Agent的动态技能和能力组合
+
+skills:
+  # 视频分析技能
+  - name: video_analysis
+    description: "完整的视频分析能力（官方评分维度：故事性+视觉效果+导演技巧+原创性）"
+    tools:
+      - ffmpeg_tool          # FFmpeg元数据提取
+      - keyframe_tool        # 关键帧提取
+      - ocr_tool             # OCR字幕识别
+      - whisper_tool         # Whisper语音转录
+    agent: video_analyzer_agent_complete
+    enabled: true
+    config:
+      # FFmpeg自定义路径（Windows系统）
+      ffmpeg_path: "E:\\ffmpeg-8.1-essentials_build\\ffmpeg-8.1-essentials_build\\bin"
+      # Whisper模型选择（tiny/base/small/medium）
+      whisper_model: "base"
+      # 关键帧提取策略
+      keyframe_strategy:
+        opening_frames: 5      # 片头帧数
+        middle_frames: 20      # 正文帧数
+        ending_frames: 5       # 片尾帧数
+
+  # 代码质量检查技能
+  - name: code_quality
+    description: "代码质量检查能力（官方评分维度：创新性+实用性+用户体验+代码质量）"
+    tools: []                  # 当前使用内置元数据分析
+    agent: code_reviewer_agent
+    enabled: true
+    config:
+      # 代码查重工具（未来集成）
+      plagiarism_checker: null
+      # 代码执行测试（未来集成）
+      code_executor: null
+      # 支持的编程语言
+      supported_languages:
+        - python
+        - java
+        - c
+        - cpp
+
+  # PPT设计评估技能
+  - name: ppt_design
+    description: "PPT设计评估能力（官方评分维度：创意+视觉效果+内容呈现+原创性）"
+    tools: []                  # 当前使用python-pptx内置分析
+    agent: ppt_reviewer_agent
+    enabled: true
+    config:
+      # PPT结构分析工具（未来集成）
+      structure_analyzer: null
+      # 设计质量评估工具（未来集成）
+      design_quality_tool: null
+      # 硬性要求配置
+      hard_requirements:
+        min_slide_count: 12    # 最少页数
+        aspect_ratio: "16:9"   # 幻灯片比例
+        allowed_formats:
+          - pptx
+
+  # 多模态综合分析技能（未来扩展）
+  - name: multimodal_analysis
+    description: "多模态作品综合分析能力（视频+代码+PPT组合作品）"
+    tools:
+      - ffmpeg_tool
+      - keyframe_tool
+      - ocr_tool
+      - whisper_tool
+    agent: orchestrator_agent
+    enabled: false            # 当前禁用，未来启用
+    config:
+      # 多Agent并行执行
+      parallel_execution: true
+      # 结果整合策略
+      aggregation_strategy: "weighted_average"
+
+  # 代码查重专项技能（未来扩展）
+  - name: plagiarism_detection
+    description: "代码相似度检测专项能力"
+    tools: []                  # 待集成JPlagTool
+    agent: code_reviewer_agent  # 使用现有Agent，未来专项扩展
+    enabled: false
+    config:
+      # JPlag配置
+      jplag_path: null
+      similarity_threshold: 0.8
+
+  # RAG辅助评审技能（未来扩展）
+  - name: rag_assisted_review
+    description: "基于历史经验的RAG辅助评审能力"
+    tools: []                  # ChromaDB已独立集成
+    agent: orchestrator_agent   # RAG已集成到各Agent
+    enabled: false
+    config:
+      # 相似案例检索数量
+      top_k_similar_cases: 3
+      # 评分一致性权重
+      consistency_weight: 0.3
+
+# 全局配置
+global_config:
+  # DeepSeek API配置
+  deepseek_api_key: "${DEEPSEEK_API_KEY}"  # 从环境变量读取
+  deepseek_base_url: "https://api.deepseek.com"
+  deepseek_model: "deepseek-chat"
+
+  # OpenAI API配置（用于RAG嵌入）
+  openai_api_key: "${OPENAI_API_KEY}"
+
+  # ChromaDB配置
+  chromadb_persist_directory: "./knowledge_data/chroma_db"
+
+  # 评审输出配置
+  output_format: "json"
+  structured_output: true
+  review_summary_length:
+    min: 200
+    max: 500
+
+  # 工具超时配置
+  tool_timeout:
+    ffmpeg: 30          # 秒
+    whisper: 120        # 秒
+    ocr: 60             # 秒
+
+  # 日志配置
+  logging:
+    level: "INFO"
+    file: "./logs/ai_agent.log"
