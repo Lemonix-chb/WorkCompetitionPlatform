@@ -20,7 +20,7 @@ import shutil
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # 配置DeepSeek API Key
-os.environ["DEEPSEEK_API_KEY"] = "sk-325ae1ccf357480ab353a41e8b26ee32"
+os.environ["DEEPSEEK_API_KEY"] = "your-deepseek-api-key"
 
 print("="*80)
 print("真实作品文件测试")

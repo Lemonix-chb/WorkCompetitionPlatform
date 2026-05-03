@@ -35,7 +35,7 @@ ai-agent:
   build: ./ai-agent-service
   ports: "8001:8001"
   environment:
-    - DEEPSEEK_API_KEY=sk-325ae1ccf357480ab353a41e8b26ee32
+    - DEEPSEEK_API_KEY=your-deepseek-api-key-here
     - SPRING_BOOT_API_URL=http://work-competition-platform:8080/api
   depends_on: [mysql, redis]
   healthcheck: curl -f http://localhost:8001/health

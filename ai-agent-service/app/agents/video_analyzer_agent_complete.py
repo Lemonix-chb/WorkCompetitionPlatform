@@ -396,7 +396,7 @@ if __name__ == "__main__":
     import os
 
     # 设置环境变量
-    os.environ["DEEPSEEK_API_KEY"] = "sk-325ae1ccf357480ab353a41e8b26ee32"
+    os.environ["DEEPSEEK_API_KEY"] = "your-deepseek-api-key"
 
     # 初始化Agent
     agent = VideoAnalyzerAgent(

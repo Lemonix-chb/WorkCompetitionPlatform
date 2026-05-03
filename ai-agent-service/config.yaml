@@ -1,6 +1,6 @@
 # AI Agent Service Configuration
 
-deepseek_api_key: "sk-325ae1ccf357480ab353a41e8b26ee32"
+deepseek_api_key: "your-deepseek-api-key-here"
 deepseek_api_url: "https://api.deepseek.com/v1/chat/completions"
 deepseek_model: "deepseek-chat"
 

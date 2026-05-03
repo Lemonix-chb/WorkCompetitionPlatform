@@ -2,7 +2,7 @@
 import httpx
 import json
 
-API_KEY = "sk-325ae1ccf357480ab353a41e8b26ee32"
+API_KEY = "your-deepseek-api-key"
 API_URL = "https://api.deepseek.com/v1/chat/completions"
 
 def test_deepseek_connection():

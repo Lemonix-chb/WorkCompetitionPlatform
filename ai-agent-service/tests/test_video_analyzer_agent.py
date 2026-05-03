@@ -17,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 设置环境变量
-os.environ["DEEPSEEK_API_KEY"] = "sk-325ae1ccf357480ab353a41e8b26ee32"
+os.environ["DEEPSEEK_API_KEY"] = "your-deepseek-api-key"
 
 from app.agents.video_analyzer_agent import VideoAnalyzerAgent
 

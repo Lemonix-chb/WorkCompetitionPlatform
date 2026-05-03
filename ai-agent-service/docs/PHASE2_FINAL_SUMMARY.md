@@ -138,7 +138,7 @@
 
 **配置**：
 ```
-API Key: sk-325ae1ccf357480ab353a41e8b26ee32 ✅ 已配置
+API Key: your-deepseek-api-key ✅ 已配置
 配置文件: .env
 模型: deepseek-chat
 温度: 0.3（保证评分稳定性）

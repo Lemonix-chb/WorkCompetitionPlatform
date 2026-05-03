@@ -239,7 +239,7 @@ ai-agent-service/
 
 **配置文件**：`.env`
 ```
-DEEPSEEK_API_KEY=sk-325ae1ccf357480ab353a41e8b26ee32
+DEEPSEEK_API_KEY=your-deepseek-api-key
 DEEPSEEK_API_URL=https://api.deepseek.com/v1/chat/completions
 DEEPSEEK_MODEL=deepseek-chat
 ```
@@ -250,7 +250,7 @@ from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
     model="deepseek-chat",
-    api_key="sk-325ae1ccf357480ab353a41e8b26ee32",
+    api_key="your-deepseek-api-key",
     base_url="https://api.deepseek.com",
     temperature=0.3
 )
@@ -395,7 +395,7 @@ tool = FFmpegTool(
 cat .env
 
 # 或设置环境变量
-export DEEPSEEK_API_KEY="sk-325ae1ccf357480ab353a41e8b26ee32"
+export DEEPSEEK_API_KEY="your-deepseek-api-key"
 ```
 
 ---

@@ -158,7 +158,7 @@ class AgentFactory:
 if __name__ == "__main__":
     import os
 
-    os.environ["DEEPSEEK_API_KEY"] = "sk-325ae1ccf357480ab353a41e8b26ee32"
+    os.environ["DEEPSEEK_API_KEY"] = "your-deepseek-api-key"
 
     from .skill_registry import SkillRegistry
 

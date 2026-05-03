@@ -24,7 +24,7 @@ import time
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # 配置API Key
-os.environ["DEEPSEEK_API_KEY"] = "sk-325ae1ccf357480ab353a41e8b26ee32"
+os.environ["DEEPSEEK_API_KEY"] = "your-deepseek-api-key"
 
 print("="*80)
 print("Phase 7：完整系统端到端验证测试")

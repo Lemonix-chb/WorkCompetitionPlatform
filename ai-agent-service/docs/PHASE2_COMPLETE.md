@@ -6,7 +6,7 @@
 
 **配置完成**：
 ```
-API Key: sk-325ae1ccf357480ab353a41e8b26ee32
+API Key: your-deepseek-api-key
 配置文件: .env
 环境变量: DEEPSEEK_API_KEY已设置
 ```

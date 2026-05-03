@@ -397,7 +397,7 @@ class OrchestratorAgent:
 if __name__ == "__main__":
     import os
 
-    os.environ["DEEPSEEK_API_KEY"] = "sk-325ae1ccf357480ab353a41e8b26ee32"
+    os.environ["DEEPSEEK_API_KEY"] = "your-deepseek-api-key"
 
     orchestrator = OrchestratorAgent(
         ffmpeg_path=r"E:\ffmpeg-8.1-essentials_build\ffmpeg-8.1-essentials_build\bin"

@@ -1,0 +1,61 @@
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 备份文件
+*.bak
+*.backup
+*~
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+.temp/
+
+# 环境变量和配置
+.env.local
+.env.*.local
+
+# IDE配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 测试覆盖率
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ChromaDB数据（本地持久化，可选择提交）
+# knowledge_data/chroma_db/
+
+# Whisper模型缓存（本地下载）
+.cache/whisper/
+
+# 测试生成的临时文件
+test_videos/temp_*.mp4
+test_code/
+test_ppt/
+test_orchestrator/
+
+# FFmpeg临时输出
+*.wav
+temp_audio/
+temp_keyframes/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.exe
+*.dll
+
+# 文档构建输出
+docs/_build/
+site/
