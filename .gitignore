@@ -31,3 +31,43 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment and Secrets ###
+.env
+.env.local
+.env.production
+application-prod.properties
+*.secret
+*.key
+
+### Claude Code ###
+.claude/
+
+### Logs ###
+logs/
+*.log
+
+### Uploads and Temporary Files ###
+uploads/
+temp/
+test_videos/
+*.mp4
+*.avi
+*.mov
+
+### Build Scripts ###
+build-and-run.bat
+build.sh
+start-backend.bat
+
+### Test Files ###
+test_*.bat
+test_*.py
+test_*.html
+
+### Node Modules ###
+node_modules/.vite/
+node_modules/.package-lock.json
+
+### Distribution Assets ###
+frontend-vue/dist/assets/
