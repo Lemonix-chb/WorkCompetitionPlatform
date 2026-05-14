@@ -23,17 +23,16 @@ PPTReviewerAgent - 演示文稿审核专家
 - PPTMetadataTool：元数据检查
 - DesignQualityTool：设计质量评估
 - OriginalityDetectorTool：原创性检测
-
-作者：AI Agent架构重构项目
-创建时间：2026-05-03
 """
 
 import os
+import json
 import logging
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
+from app.utils.llm_utils import extract_json_from_llm_output
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +48,7 @@ class PPTReviewOutput(BaseModel):
     visual_effect_score: float = Field(description="视觉效果评分（0-25分）", ge=0, le=25)
     content_presentation_score: float = Field(description="内容呈现评分（0-25分）", ge=0, le=25)
     originality_score: float = Field(description="原创性评分（0-25分）", ge=0, le=25)
+    documentation_score: float = Field(description="文档完整性评分（0-25分）", ge=0, le=25)
 
     # 硬性要求合规性
     compliance_check: Dict[str, Any] = Field(description="硬性要求合规性检查结果")
@@ -190,7 +190,8 @@ class PPTReviewerAgent:
             "format": "Unknown",
             "has_password": False,
             "aspect_ratio": "Unknown",
-            "slide_dimensions": None
+            "slide_dimensions": None,
+            "slide_contents": []  # 新增：提取每页文本内容
         }
 
         try:
@@ -245,6 +246,32 @@ class PPTReviewerAgent:
                     "width_emus": slide_width,
                     "height_emus": slide_height
                 }
+
+                # 提取每页幻灯片的文本内容
+                slide_contents = []
+                for idx, slide in enumerate(prs.slides, start=1):
+                    slide_text = {
+                        "slide_number": idx,
+                        "title": "",
+                        "content": []
+                    }
+
+                    # 遍历所有shape提取文本
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text") and shape.text.strip():
+                            text = shape.text.strip()
+                            # 判断是否为标题（通常第一个文本框或大字体）
+                            if not slide_text["title"] and len(text) < 100:
+                                slide_text["title"] = text
+                            else:
+                                slide_text["content"].append(text)
+
+                    # 如果该页有内容，添加到列表
+                    if slide_text["title"] or slide_text["content"]:
+                        slide_contents.append(slide_text)
+
+                metadata["slide_contents"] = slide_contents
+                logger.info(f"成功提取{len(slide_contents)}页幻灯片文本内容")
 
                 # 尝试检测密码保护（通过尝试打开判断）
                 # 如果成功打开，说明无密码保护
@@ -399,14 +426,20 @@ class PPTReviewerAgent:
    - 图文比例（图片与文字平衡、信息密度）
 
 3. 内容呈现（25分）：
-   - 逻辑结构（章节划分、内容连贯性）
+   - 逻辑结构（章节划分、内容连贯性、论证完整性）
    - 信息密度（每页信息量适中、重点突出）
-   - 文字质量（语言表达、错别字检查）
+   - 内容深度（学术价值、技术深度、知识覆盖）
+   - 文字质量（语言表达、错别字检查、专业术语准确性）
 
 4. 原创性（25分）：
    - 原创元素（原创图片、原创图表、原创动画）
    - 内容原创（观点原创、数据原创）
    - 设计原创（模板原创、配色原创）
+
+5. 文档完整性（25分）：
+   - 说明文档是否存在（README、docx、pdf、txt均可）
+   - 文档内容质量（是否清晰描述作品主题、设计思路、演示逻辑）
+   - 技术说明完整性（是否有设计说明、素材来源说明等）
 
 【硬性要求检查】：
 - 页数：至少12页
@@ -429,6 +462,7 @@ class PPTReviewerAgent:
   "visual_effect_score": 视觉效果评分（0-25）,
   "content_presentation_score": 内容呈现评分（0-25）,
   "originality_score": 原创性评分（0-25）,
+  "documentation_score": 文档完整性评分（0-25）,
   "review_summary": "评审总结（200-500字）",
   "strengths": ["亮点1", "亮点2", ...],
   "weaknesses": ["不足1", "不足2", ...],
@@ -443,9 +477,24 @@ class PPTReviewerAgent:
         readme_content: Optional[str],
         visual_effect_score: float
     ) -> str:
-        """构建PPT评审提示词"""
+        """构建PPT评审提示词（包含提取的文本内容）"""
 
         compliance_status = "符合所有硬性要求" if compliance_check["all_valid"] else "部分硬性要求不合规"
+
+        # 构建PPT文本内容摘要（前10页）
+        ppt_content_summary = ""
+        if ppt_metadata.get("slide_contents"):
+            ppt_content_summary = "\n【PPT文本内容摘要】（前10页）：\n"
+            for slide in ppt_metadata["slide_contents"][:10]:
+                ppt_content_summary += f"\n第{slide['slide_number']}页：\n"
+                if slide['title']:
+                    ppt_content_summary += f"标题：{slide['title']}\n"
+                if slide['content']:
+                    # 合并内容，限制长度
+                    content_text = "\n".join(slide['content'][:3])  # 只取前3段
+                    if len(content_text) > 200:
+                        content_text = content_text[:200] + "..."
+                    ppt_content_summary += f"内容：{content_text}\n"
 
         prompt = f"""请评审以下演示文稿作品：
 
@@ -457,6 +506,7 @@ class PPTReviewerAgent:
 - 幻灯片尺寸：{ppt_metadata.get('slide_dimensions', '未知')}
 - 文件大小：{ppt_metadata['file_size'] / (1024*1024):.2f}MB
 - 密码保护：{'有' if ppt_metadata['has_password'] else '无'}
+{ppt_content_summary}
 
 【硬性要求合规性】：
 状态：{compliance_status}
@@ -476,7 +526,14 @@ class PPTReviewerAgent:
 【README文档】：
 {readme_content if readme_content else '未提供README文档'}
 
-请根据评审标准，对演示文稿作品进行全面评价。请以JSON格式输出评审结果。"""
+【评审要求】：
+请根据评审标准，对演示文稿作品进行全面评价。特别关注以下方面：
+1. **内容深度分析**：分析PPT讲述的主题、技术点、创新观点的学术价值和技术深度
+2. **逻辑性评估**：评估内容章节划分是否合理、论证是否完整、知识点是否连贯
+3. **实用价值**：判断PPT内容是否具有实际应用价值、是否能解决实际问题
+4. **创新性评价**：识别内容中的创新观点、独特见解、新颖方法
+
+请以JSON格式输出评审结果。"""
 
         return prompt
 
@@ -488,17 +545,8 @@ class PPTReviewerAgent:
         visual_effect_score: float
     ) -> PPTReviewOutput:
         """解析LLM输出为结构化评审结果"""
-        import json
-
         try:
-            # 提取JSON部分
-            json_str = llm_output
-            if "```json" in llm_output:
-                json_str = llm_output.split("```json")[1].split("```")[0].strip()
-            elif "```" in llm_output:
-                json_str = llm_output.split("```")[1].split("```")[0].strip()
-
-            result_dict = json.loads(json_str)
+            result_dict = extract_json_from_llm_output(llm_output)
 
             # 构建PPTReviewOutput对象
             review_output = PPTReviewOutput(
@@ -507,6 +555,7 @@ class PPTReviewerAgent:
                 visual_effect_score=result_dict.get("visual_effect_score", visual_effect_score),
                 content_presentation_score=result_dict.get("content_presentation_score", 15),
                 originality_score=result_dict.get("originality_score", 15),
+                documentation_score=result_dict.get("documentation_score", 10),
                 compliance_check=compliance_check,
                 review_summary=result_dict.get("review_summary", ""),
                 strengths=result_dict.get("strengths", []),
@@ -527,6 +576,7 @@ class PPTReviewerAgent:
                 visual_effect_score=visual_effect_score,
                 content_presentation_score=15,
                 originality_score=15,
+                documentation_score=10,
                 compliance_check=compliance_check,
                 review_summary="评审结果解析失败",
                 strengths=["评审解析失败"],

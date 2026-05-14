@@ -5,6 +5,7 @@ import com.example.workcompetitionplatform.entity.Team;
 import com.example.workcompetitionplatform.entity.TeamMember;
 import com.example.workcompetitionplatform.entity.TeamInvitation;
 import com.example.workcompetitionplatform.entity.TeamApplication;
+import com.example.workcompetitionplatform.entity.Registration;
 
 import java.util.List;
 
@@ -74,7 +75,7 @@ public interface ITeamService extends IService<Team> {
      * @param invitedUserId 被邀请人ID
      * @return 团队邀请实体
      */
-    TeamInvitation inviteMember(Long teamId, Long inviterUserId, Long invitedUserId);
+    TeamInvitation inviteMember(Long teamId, Long inviterUserId, String inviteeStudentNo);
 
     /**
      * 用户申请加入团队
@@ -190,4 +191,20 @@ public interface ITeamService extends IService<Team> {
      * @return 是否成功
      */
     boolean dissolveTeam(Long teamId);
+
+    /**
+     * 模糊搜索团队（支持团队名称、团队编号、队长姓名、赛道名称）
+     *
+     * @param keyword 搜索关键词
+     * @return 团队列表
+     */
+    List<Team> searchTeamsFuzzy(String keyword);
+
+    /**
+     * 查询团队的报名记录列表
+     *
+     * @param teamId 团队ID
+     * @return 报名记录列表
+     */
+    List<Registration> listTeamRegistrations(Long teamId);
 }

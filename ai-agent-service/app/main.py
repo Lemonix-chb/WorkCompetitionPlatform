@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="AI Review Agent Service",
-    description="独立AI审核微服务，使用LangChain Agent进行智能作品评审",
+    description="独立AI评审微服务，使用LangChain Agent进行智能作品评审",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -70,7 +70,7 @@ async def shutdown_event():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "main:app",
+        "app.main:app",
         host="0.0.0.0",
         port=8001,
         reload=True,

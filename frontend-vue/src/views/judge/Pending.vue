@@ -78,7 +78,51 @@
       </div>
 
       <!-- Review Dialog -->
-      <el-dialog v-model="showReviewDialogFlag" title="提交评审" width="600px">
+      <el-dialog v-model="showReviewDialogFlag" title="提交评审" width="700px">
+        <!-- AI Review Reference Section -->
+        <div v-if="currentAIReport" class="ai-review-reference mb-lg">
+          <div class="reference-header">
+            <span class="badge badge-info">AI评审参考</span>
+            <span class="ai-score">AI综合得分: <strong>{{ currentAIReport.overallScore }}</strong> 分</span>
+          </div>
+
+          <div class="reference-content mt-md">
+            <div class="ai-summary-section">
+              <span class="section-label caption">AI评审摘要</span>
+              <p class="body-text">{{ currentAIReport.reviewSummary }}</p>
+            </div>
+
+            <div class="ai-scores-grid mt-md">
+              <div class="ai-score-item">
+                <span class="score-label caption">创新性</span>
+                <span class="score-value">{{ currentAIReport.innovationScore }}</span>
+              </div>
+              <div class="ai-score-item">
+                <span class="score-label caption">实用性</span>
+                <span class="score-value">{{ currentAIReport.practicalityScore }}</span>
+              </div>
+              <div class="ai-score-item">
+                <span class="score-label caption">用户体验</span>
+                <span class="score-value">{{ currentAIReport.userExperienceScore }}</span>
+              </div>
+              <div class="ai-score-item">
+                <span class="score-label caption">文档质量</span>
+                <span class="score-value">{{ currentAIReport.documentationScore }}</span>
+              </div>
+            </div>
+
+            <div class="ai-suggestions-section mt-md" v-if="currentAIReport.improvementSuggestions">
+              <span class="section-label caption">AI改进建议</span>
+              <p class="body-text">{{ currentAIReport.improvementSuggestions }}</p>
+            </div>
+          </div>
+
+          <div class="reference-note caption mt-md">
+            以上为AI评审结果，仅供评审参考，请根据您的专业判断进行评分。
+          </div>
+        </div>
+
+        <!-- Review Form -->
         <el-form :model="reviewForm" label-width="120px">
           <el-form-item label="作品名称">
             <span class="body-text">{{ currentTask ? getWorkName(currentTask.submissionId) : '' }}</span>
@@ -86,15 +130,53 @@
           <el-form-item label="团队名称">
             <span class="body-text">{{ currentTask ? getTeamName(currentTask.teamId) : '' }}</span>
           </el-form-item>
-          <el-form-item label="评审分数" required>
-            <el-slider
-              v-model="reviewForm.score"
-              :min="0"
-              :max="100"
-              :marks="scoreMarks"
-              show-input
-            />
-          </el-form-item>
+
+          <!-- 三个维度评分 -->
+          <div class="score-section">
+            <h4 class="score-section-title mb-md">维度评分（满分25分/维度）</h4>
+
+            <el-form-item label="创新性" required>
+              <el-slider
+                v-model="reviewForm.innovationScore"
+                :min="0"
+                :max="25"
+                :marks="dimensionMarks"
+                show-input
+              />
+              <span class="score-hint caption">作品的新颖性、独特性和创意程度</span>
+            </el-form-item>
+
+            <el-form-item label="实用性" required>
+              <el-slider
+                v-model="reviewForm.practicalityScore"
+                :min="0"
+                :max="25"
+                :marks="dimensionMarks"
+                show-input
+              />
+              <span class="score-hint caption">作品的应用价值、解决问题能力</span>
+            </el-form-item>
+
+            <el-form-item label="用户体验" required>
+              <el-slider
+                v-model="reviewForm.userExperienceScore"
+                :min="0"
+                :max="25"
+                :marks="dimensionMarks"
+                show-input
+              />
+              <span class="score-hint caption">作品的易用性、交互设计、视觉呈现</span>
+            </el-form-item>
+
+            <!-- 自动计算总分 -->
+            <el-form-item label="综合得分">
+              <div class="total-score-display">
+                <span class="total-score-value">{{ calculateTotalScore() }}</span>
+                <span class="total-score-unit caption">/75分</span>
+              </div>
+            </el-form-item>
+          </div>
+
           <el-form-item label="评审意见">
             <el-input
               v-model="reviewForm.comments"
@@ -190,7 +272,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { get, postForm } from '@/utils/api'
+import { get, post } from '@/utils/api'
 import { formatDateTime } from '@/utils/dateUtils'
 import { showSuccess, showWarning, showConfirm } from '@/utils/messageUtils'
 import {
@@ -213,18 +295,32 @@ const showWorkDetailDialog = ref(false)
 const currentTask = ref(null)
 const currentWork = ref(null)
 const currentWorkAttachments = ref([])
+const currentAIReport = ref(null) // AI评审报告
 
 const reviewForm = reactive({
   judgeReviewId: null,
-  score: 80,
+  innovationScore: 20,
+  practicalityScore: 20,
+  userExperienceScore: 20,
   comments: ''
 })
+
+const dimensionMarks = {
+  0: '0分',
+  15: '15分',
+  25: '25分'
+}
 
 const scoreMarks = {
   0: '0分',
   60: '60分',
   80: '80分',
   100: '100分'
+}
+
+// 计算总分
+const calculateTotalScore = () => {
+  return reviewForm.innovationScore + reviewForm.practicalityScore + reviewForm.userExperienceScore
 }
 
 onMounted(async () => {
@@ -246,7 +342,7 @@ const fetchPendingTasks = async () => {
     const data = await get('/reviews/my')
 
     // 过滤出待评审的任务（DRAFT状态）
-    const allTasks = data.data || []
+    const allTasks = data || []
     pendingTasks.value = allTasks.filter(task => task.status === 'DRAFT')
 
     // 如果有任务，获取相关的submission和work信息
@@ -268,7 +364,7 @@ const fetchPendingTasks = async () => {
 const fetchSubmissions = async () => {
   try {
     const data = await get('/submissions/all')
-    submissions.value = data.data || []
+    submissions.value = data || []
   } catch (error) {
     console.error('获取提交列表失败', error)
   }
@@ -277,7 +373,7 @@ const fetchSubmissions = async () => {
 const fetchWorks = async () => {
   try {
     const data = await get('/works/all')
-    works.value = data.data || []
+    works.value = data || []
   } catch (error) {
     console.error('获取作品列表失败', error)
   }
@@ -286,7 +382,7 @@ const fetchWorks = async () => {
 const fetchTeams = async () => {
   try {
     const data = await get('/teams')
-    teams.value = data.data || []
+    teams.value = data || []
   } catch (error) {
     console.error('获取团队列表失败', error)
   }
@@ -332,11 +428,31 @@ const getWorkTypeText = (workType) => {
   return texts[workType] || workType
 }
 
-const showReviewDialog = (task) => {
+const showReviewDialog = async (task) => {
   currentTask.value = task
   reviewForm.judgeReviewId = task.id
-  reviewForm.score = 80
+  reviewForm.innovationScore = 20
+  reviewForm.practicalityScore = 20
+  reviewForm.userExperienceScore = 20
   reviewForm.comments = ''
+  currentAIReport.value = null
+
+  // 加载 AI 评审报告作为参考
+  try {
+    const report = await get(`/ai-reviews/judge-report/${task.submissionId}`)
+    currentAIReport.value = report
+
+    // 如果有AI评分，可以作为初始参考值
+    if (report) {
+      reviewForm.innovationScore = report.innovationScore || 20
+      reviewForm.practicalityScore = report.practicalityScore || 20
+      reviewForm.userExperienceScore = report.userExperienceScore || 20
+    }
+  } catch (error) {
+    // AI评审报告不存在时不影响评审流程
+    console.log('AI评审报告不存在或加载失败', error)
+  }
+
   showReviewDialogFlag.value = true
 }
 
@@ -356,8 +472,8 @@ const handleDownloadAttachment = async (attachment) => {
 }
 
 const submitReview = async () => {
-  if (!reviewForm.score) {
-    showWarning('请输入评审分数')
+  if (!reviewForm.innovationScore || !reviewForm.practicalityScore || !reviewForm.userExperienceScore) {
+    showWarning('请完成所有维度的评分')
     return
   }
 
@@ -366,11 +482,17 @@ const submitReview = async () => {
 
     submitting.value = true
 
-    await postForm('/reviews/judge', {
+    // 构造URL查询参数（包含三个维度的评分）
+    const queryParams = new URLSearchParams({
       judgeReviewId: reviewForm.judgeReviewId,
-      score: reviewForm.score,
+      innovationScore: reviewForm.innovationScore,
+      practicalityScore: reviewForm.practicalityScore,
+      userExperienceScore: reviewForm.userExperienceScore,
+      overallScore: calculateTotalScore(),
       comments: reviewForm.comments || ''
-    })
+    }).toString()
+
+    await post(`/reviews/judge?${queryParams}`)
 
     showSuccess('评审已提交')
     showReviewDialogFlag.value = false
@@ -543,6 +665,160 @@ const submitReview = async () => {
 
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ===== AI 评审参考区样式 ===== */
+
+.ai-review-reference {
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.05) 0%, rgba(52, 152, 219, 0.1) 100%);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.reference-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-info {
+  background: var(--color-accent);
+  color: white;
+}
+
+.ai-score {
+  font-size: var(--text-lg);
+  color: var(--color-text);
+}
+
+.ai-score strong {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.reference-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-label {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.ai-summary-section,
+.ai-suggestions-section {
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.ai-scores-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+}
+
+.ai-score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.ai-score-item .score-label {
+  color: var(--color-text-secondary);
+}
+
+.ai-score-item .score-value {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.reference-note {
+  padding: var(--spacing-sm);
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .ai-scores-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reference-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+}
+
+/* ===== 三维度评分样式 ===== */
+
+.score-section {
+  padding: var(--spacing-lg);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.score-section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-primary);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.score-hint {
+  display: block;
+  margin-top: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.total-score-display {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+}
+
+.total-score-value {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.total-score-unit {
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 768px) {
+  .ai-scores-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .reference-header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .score-section {
+    padding: var(--spacing-md);
+  }
+
+  .total-score-value {
+    font-size: var(--text-3xl);
   }
 }
 </style>

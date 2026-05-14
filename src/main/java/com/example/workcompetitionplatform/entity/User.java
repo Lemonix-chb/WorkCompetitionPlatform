@@ -88,7 +88,7 @@ public class User {
     private UserRole role;
 
     /**
-     * 账号状态：ACTIVE-正常, DISABLED-禁用, PENDING-待审核
+     * 账号状态：ACTIVE-正常, DISABLED-禁用, PENDING-待评审
      */
     @TableField(value = "status")
     private UserStatus status = UserStatus.ACTIVE;
@@ -120,6 +120,6 @@ public class User {
     public enum UserStatus {
         ACTIVE,    // 正常
         DISABLED,  // 禁用
-        PENDING    // 待审核
+        PENDING    // 待评审
     }
 }

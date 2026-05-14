@@ -1,11 +1,13 @@
 package com.example.workcompetitionplatform.controller;
 
 import com.example.workcompetitionplatform.dto.ApiResponse;
+import com.example.workcompetitionplatform.dto.StudentResultDTO;
 import com.example.workcompetitionplatform.dto.StudentStatsDTO;
 import com.example.workcompetitionplatform.entity.TeamMember;
 import com.example.workcompetitionplatform.entity.Work;
 import com.example.workcompetitionplatform.mapper.TeamMemberMapper;
 import com.example.workcompetitionplatform.mapper.WorkMapper;
+import com.example.workcompetitionplatform.service.IReviewResultService;
 import com.example.workcompetitionplatform.util.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +38,9 @@ public class StudentController {
 
     @Autowired
     private WorkMapper workMapper;
+
+    @Autowired
+    private IReviewResultService reviewResultService;
 
     /**
      * 查询学生统计数据
@@ -78,5 +83,21 @@ public class StudentController {
         log.info("查询学生统计数据：用户ID {}", userId);
 
         return ApiResponse.success(stats);
+    }
+
+    /**
+     * 查询学生评审结果
+     * 返回学生所在团队的所有作品评审结果，包括AI评分、评委评分、最终得分、奖项等级等
+     *
+     * @return API响应（包含评审结果列表）
+     */
+    @Operation(summary = "查询学生评审结果")
+    @GetMapping("/results")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ApiResponse<List<StudentResultDTO>> getStudentResults() {
+        Long userId = UserContext.getCurrentUserId();
+        List<StudentResultDTO> results = reviewResultService.getStudentResults(userId);
+        log.info("查询学生评审结果：用户ID {}, 结果数量 {}", userId, results.size());
+        return ApiResponse.success(results);
     }
 }

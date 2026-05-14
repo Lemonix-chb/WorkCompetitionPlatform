@@ -245,7 +245,26 @@ public class WorkServiceImpl extends ServiceImpl<WorkMapper, Work> implements IW
             submissionId = submission.getId();
         }
 
-        asyncAIReviewService.performAIReviewAsync(submissionId, UserContext.getCurrentUserId());
+        System.out.println("========================================");
+        System.out.println("[WorkServiceImpl] 作品提交准备触发AI评审");
+        System.out.println("  - workId: " + workId);
+        System.out.println("  - submissionId: " + submissionId);
+        System.out.println("  - userId: " + UserContext.getCurrentUserId());
+        System.out.println("  - workType: " + work.getWorkType());
+        System.out.println("========================================");
+
+        // 事务提交后再触发AI评审，避免异步线程读不到未提交的数据
+        Long finalSubmissionId = submissionId;
+        Long finalUserId = UserContext.getCurrentUserId();
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+            new org.springframework.transaction.support.TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    asyncAIReviewService.performAIReviewAsync(finalSubmissionId, finalUserId);
+                    System.out.println("[WorkServiceImpl] AI评审异步任务已派发（事务已提交）");
+                }
+            }
+        );
 
         // 更新作品状态为已提交
         work.setDevelopmentStatus(Work.DevelopmentStatus.SUBMITTED);

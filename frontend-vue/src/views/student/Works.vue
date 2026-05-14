@@ -61,7 +61,7 @@
             >
               <div v-if="work.aiReviewStatus?.status === 'VALIDATING'" class="review-animation">
                 <div class="review-spinner"></div>
-                <div class="review-text">审核中</div>
+                <div class="review-text">评审中</div>
               </div>
               <div v-else>
                 <div class="score-value">
@@ -127,7 +127,7 @@
                 <!-- AI Review Status -->
                 <div v-if="work.aiReviewStatus" class="review-status-section">
                   <div class="review-type-item">
-                    <span class="review-type-label">🤖 AI审核</span>
+                    <span class="review-type-label">🤖 AI评审</span>
                     <span :class="getAIStatusClass(work.aiReviewStatus.status)" class="status-mini-badge">
                       {{ getAIStatusText(work.aiReviewStatus.status) }}
                     </span>
@@ -149,7 +149,7 @@
 
                   <!-- Judge Review Status -->
                   <div v-if="work.judgeReviewStatus" class="review-type-item">
-                    <span class="review-type-label">👨‍⚖️ 评审员审核</span>
+                    <span class="review-type-label">👨‍⚖️ 评审员评审</span>
                     <span :class="getJudgeStatusClass(work.judgeReviewStatus.status)" class="status-mini-badge">
                       {{ getJudgeStatusText(work.judgeReviewStatus.status) }}
                     </span>
@@ -424,7 +424,7 @@
       <!-- AI Review Report Dialog - Beautified -->
       <el-dialog
         v-model="showAIReportDialog"
-        title="AI智能审核报告"
+        title="AI智能评审报告"
         width="90%"
         :close-on-click-modal="false"
       >
@@ -440,50 +440,147 @@
               </div>
             </div>
 
-            <!-- 维度评分 -->
+            <!-- 维度评分 - 根据作品类型动态显示 -->
             <div class="dimension-bars">
-              <div class="dimension-row">
-                <div class="dim-info">
-                  <span class="dim-emoji">💡</span>
-                  <span class="dim-title">创新性</span>
+              <!-- CODE作品评分维度 -->
+              <div v-if="currentAIReport.workType === 'CODE'">
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">💡</span>
+                    <span class="dim-title">创新性</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill innovation" :style="{ width: (currentAIReport.innovationScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.innovationScore || 0 }} / 25</span>
                 </div>
-                <div class="dim-bar-wrapper">
-                  <div class="dim-bar-fill innovation" :style="{ width: (currentAIReport.innovationScore / 25 * 100) + '%' }"></div>
+
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">🔧</span>
+                    <span class="dim-title">实用性</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill practicality" :style="{ width: (currentAIReport.practicalityScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.practicalityScore || 0 }} / 25</span>
                 </div>
-                <span class="dim-score">{{ currentAIReport.innovationScore || 0 }} / 25</span>
+
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">✨</span>
+                    <span class="dim-title">用户体验</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill experience" :style="{ width: (currentAIReport.userExperienceScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.userExperienceScore || 0 }} / 25</span>
+                </div>
+
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">📖</span>
+                    <span class="dim-title">文档质量</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill documentation" :style="{ width: (currentAIReport.documentationScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.documentationScore || 0 }} / 25</span>
+                </div>
               </div>
 
-              <div class="dimension-row">
-                <div class="dim-info">
-                  <span class="dim-emoji">🔧</span>
-                  <span class="dim-title">实用性</span>
+              <!-- PPT作品评分维度 -->
+              <div v-if="currentAIReport.workType === 'PPT'">
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">🎨</span>
+                    <span class="dim-title">创意</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill creativity" :style="{ width: (currentAIReport.creativityScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.creativityScore || 0 }} / 25</span>
                 </div>
-                <div class="dim-bar-wrapper">
-                  <div class="dim-bar-fill practicality" :style="{ width: (currentAIReport.practicalityScore / 25 * 100) + '%' }"></div>
+
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">👁️</span>
+                    <span class="dim-title">视觉效果</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill visual" :style="{ width: (currentAIReport.visualEffectScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.visualEffectScore || 0 }} / 25</span>
                 </div>
-                <span class="dim-score">{{ currentAIReport.practicalityScore || 0 }} / 25</span>
+
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">📊</span>
+                    <span class="dim-title">内容呈现</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill content" :style="{ width: (currentAIReport.contentPresentationScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.contentPresentationScore || 0 }} / 25</span>
+                </div>
+
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">🌟</span>
+                    <span class="dim-title">原创性</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill originality" :style="{ width: (currentAIReport.originalityScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.originalityScore || 0 }} / 25</span>
+                </div>
               </div>
 
-              <div class="dimension-row">
-                <div class="dim-info">
-                  <span class="dim-emoji">✨</span>
-                  <span class="dim-title">用户体验</span>
+              <!-- VIDEO作品评分维度 -->
+              <div v-if="currentAIReport.workType === 'VIDEO'">
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">📖</span>
+                    <span class="dim-title">故事性</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill story" :style="{ width: (currentAIReport.storyScore / 30 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.storyScore || 0 }} / 30</span>
                 </div>
-                <div class="dim-bar-wrapper">
-                  <div class="dim-bar-fill experience" :style="{ width: (currentAIReport.userExperienceScore / 25 * 100) + '%' }"></div>
-                </div>
-                <span class="dim-score">{{ currentAIReport.userExperienceScore || 0 }} / 25</span>
-              </div>
 
-              <div class="dimension-row">
-                <div class="dim-info">
-                  <span class="dim-emoji">📖</span>
-                  <span class="dim-title">文档质量</span>
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">🎬</span>
+                    <span class="dim-title">视觉效果</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill visual" :style="{ width: (currentAIReport.visualEffectScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.visualEffectScore || 0 }} / 25</span>
                 </div>
-                <div class="dim-bar-wrapper">
-                  <div class="dim-bar-fill documentation" :style="{ width: (currentAIReport.documentationScore / 25 * 100) + '%' }"></div>
+
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">🎯</span>
+                    <span class="dim-title">导演技巧</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill director" :style="{ width: (currentAIReport.directorSkillScore / 25 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.directorSkillScore || 0 }} / 25</span>
                 </div>
-                <span class="dim-score">{{ currentAIReport.documentationScore || 0 }} / 25</span>
+
+                <div class="dimension-row">
+                  <div class="dim-info">
+                    <span class="dim-emoji">🌟</span>
+                    <span class="dim-title">原创性</span>
+                  </div>
+                  <div class="dim-bar-wrapper">
+                    <div class="dim-bar-fill originality" :style="{ width: (currentAIReport.originalityScore / 20 * 100) + '%' }"></div>
+                  </div>
+                  <span class="dim-score">{{ currentAIReport.originalityScore || 0 }} / 20</span>
+                </div>
               </div>
             </div>
           </div>
@@ -575,7 +672,7 @@
       <!-- Judge Review Report Dialog -->
       <el-dialog
         v-model="showJudgeReportDialog"
-        title="评审员审核报告"
+        title="评审员评审报告"
         width="700px"
       >
         <div v-if="currentJudgeReport" class="judge-report-content">
@@ -748,10 +845,10 @@ const fetchWorks = async () => {
             startPolling(work.id)
           }
         } catch (error) {
-          console.error('获取AI审核状态失败', error)
+          console.error('获取AI评审状态失败', error)
         }
 
-        // 获取评审员审核状态
+        // 获取评审员评审状态
         try {
           const submissionData = await get(`/submissions/work/${work.id}`)
           if (submissionData && submissionData.id) {
@@ -788,7 +885,7 @@ const fetchWorks = async () => {
           }
         } catch (error) {
           // 如果获取失败，设置为待分配状态
-          console.error('获取评审员审核状态失败', error)
+          console.error('获取评审员评审状态失败', error)
           work.judgeReviewStatus = {
             status: 'NOT_ASSIGNED',
             totalScore: null,
@@ -866,6 +963,10 @@ const handleCreateWork = async () => {
   }
   if (!createWorkForm.value.teamId) {
     showWarning('请选择团队')
+    return
+  }
+  if (!createWorkForm.value.trackId) {
+    showWarning('该团队未关联赛道，请确认团队已报名参赛')
     return
   }
 
@@ -1046,7 +1147,7 @@ const submitWork = async (work) => {
     await post(`/works/${work.id}/submit`)
     console.log('API call successful')
 
-    showSuccess(isResubmit ? '✅ 作品已重新提交，AI正在审核中' : '✅ 作品已提交，AI正在审核中')
+    showSuccess(isResubmit ? '✅ 作品已重新提交，AI正在评审中' : '✅ 作品已提交，AI正在评审中')
     await fetchWorks()
   } catch (error) {
     console.error('submitWork error:', error)
@@ -1130,9 +1231,9 @@ const getAIStatusClass = (status) => {
 
 const getAIStatusText = (status) => {
   const texts = {
-    VALIDATING: 'AI审核中',
-    VALID: '审核通过',
-    INVALID: '审核未通过'
+    VALIDATING: 'AI评审中',
+    VALID: '评审通过',
+    INVALID: '评审未通过'
   }
   return texts[status] || status
 }
@@ -1170,7 +1271,7 @@ const getJudgeScoreText = (score) => {
 
 const viewJudgeReport = async (work) => {
   try {
-    showInfo('正在加载评审员审核报告...')
+    showInfo('正在加载评审员评审报告...')
 
     const submissionData = await get(`/submissions/work/${work.id}`)
     if (!submissionData || !submissionData.id) {
@@ -1178,7 +1279,7 @@ const viewJudgeReport = async (work) => {
       return
     }
 
-    // 获取评审员审核列表
+    // 获取评审员评审列表
     const judgeReviews = await get(`/reviews/judge/submission/${submissionData.id}`)
     if (judgeReviews && judgeReviews.length > 0) {
       // 找到已提交的评审记录
@@ -1200,10 +1301,10 @@ const viewJudgeReport = async (work) => {
       }
       showJudgeReportDialog.value = true
     } else {
-      showWarning('暂无评审员审核报告')
+      showWarning('暂无评审员评审报告')
     }
   } catch (error) {
-    showError('获取评审员审核报告失败')
+    showError('获取评审员评审报告失败')
   }
 }
 
@@ -1240,7 +1341,7 @@ const getDuplicateClass = (rate) => {
 }
 
 const getScoreGradient = (score, status) => {
-  // 如果审核未通过且没有分数，使用深红色背景
+  // 如果评审未通过且没有分数，使用深红色背景
   if (status === 'INVALID' && !score) {
     return 'background: linear-gradient(135deg, #C62828, #B71C1C)'
   }
@@ -1263,7 +1364,7 @@ const getProgressStageClass = (status, stage, aiReviewStatus) => {
 
   if (stage < currentStage) return 'completed'
   if (stage === currentStage) {
-    // 检查是否在审核中（SUBMITTED状态且AI审核状态为VALIDATING）
+    // 检查是否在评审中（SUBMITTED状态且AI评审状态为VALIDATING）
     if (status === 'SUBMITTED' && aiReviewStatus?.status === 'VALIDATING') {
       return 'active reviewing'
     }
@@ -1348,13 +1449,13 @@ const startPolling = (workId) => {
         pollingIntervals.value[workId] = null
 
         if (statusData?.status === 'VALID') {
-          showSuccess('AI审核已完成，作品审核通过！')
+          showSuccess('AI评审已完成，作品评审通过！')
         } else if (statusData?.status === 'INVALID') {
-          showWarning('AI审核已完成，作品审核未通过，请查看报告。')
+          showWarning('AI评审已完成，作品评审未通过，请查看报告。')
         }
       }
     } catch (error) {
-      console.error('轮询AI审核状态失败', error)
+      console.error('轮询AI评审状态失败', error)
       if (error.message && error.message.includes('403')) {
         clearInterval(pollInterval)
         pollingIntervals.value[workId] = null
@@ -1374,7 +1475,7 @@ const startPolling = (workId) => {
 
 const refreshAIStatus = async (work) => {
   try {
-    showInfo('正在刷新AI审核状态...')
+    showInfo('正在刷新AI评审状态...')
     const statusData = await get(`/ai-reviews/status/${work.id}`)
     work.aiReviewStatus = statusData
 
@@ -1386,12 +1487,12 @@ const refreshAIStatus = async (work) => {
       }
 
       if (statusData?.status === 'VALID') {
-        showSuccess('AI审核已完成，作品审核通过！')
+        showSuccess('AI评审已完成，作品评审通过！')
       } else if (statusData?.status === 'INVALID') {
-        showWarning('AI审核已完成，作品审核未通过。')
+        showWarning('AI评审已完成，作品评审未通过。')
       }
     } else {
-      showInfo('AI审核仍在进行中...')
+      showInfo('AI评审仍在进行中...')
     }
   } catch (error) {
     showError('刷新状态失败')
@@ -1402,7 +1503,7 @@ const viewAIReport = async (work) => {
   try {
     const submissionData = await get(`/submissions/work/${work.id}`)
     if (!submissionData || !submissionData.id) {
-      showError('作品尚未提交，无法查看审核报告')
+      showError('作品尚未提交，无法查看评审报告')
       return
     }
 
@@ -1410,7 +1511,7 @@ const viewAIReport = async (work) => {
     currentAIReport.value = detailDTO
     showAIReportDialog.value = true
   } catch (error) {
-    showError('获取AI审核报告失败')
+    showError('获取AI评审报告失败')
   }
 }
 </script>
@@ -2540,6 +2641,32 @@ const viewAIReport = async (work) => {
 
 .dim-bar-fill.documentation {
   background: linear-gradient(90deg, #4CAF50, #66BB6A);
+}
+
+/* PPT作品评分维度样式 */
+.dim-bar-fill.creativity {
+  background: linear-gradient(90deg, #FF69B4, #DA70D6);
+}
+
+.dim-bar-fill.visual {
+  background: linear-gradient(90deg, #00CED1, #20B2AA);
+}
+
+.dim-bar-fill.content {
+  background: linear-gradient(90deg, #7B68EE, #6A5ACD);
+}
+
+.dim-bar-fill.originality {
+  background: linear-gradient(90deg, #FFD700, #FFA500);
+}
+
+/* VIDEO作品评分维度样式 */
+.dim-bar-fill.story {
+  background: linear-gradient(90deg, #4CAF50, #66BB6A);
+}
+
+.dim-bar-fill.director {
+  background: linear-gradient(90deg, #FF9800, #FFB74D);
 }
 
 .dim-score {

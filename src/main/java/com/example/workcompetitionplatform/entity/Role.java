@@ -56,5 +56,5 @@ public class Role {
      */
     public static final String ADMIN = "ADMIN";
     public static final String JUDGE = "JUDGE";
-    public static final String PARTICIPANT = "PARTICIPANT";
+    public static final String STUDENT = "STUDENT";
 }

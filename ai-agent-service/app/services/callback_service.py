@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class CallbackService:
-    """回调服务 - 向Spring Boot返回审核结果"""
+    """回调服务 - 向Spring Boot返回评审结果"""
 
     def __init__(self):
         """初始化回调服务"""
@@ -17,11 +17,11 @@ class CallbackService:
 
     async def send_callback(self, submission_id: int, report: dict) -> bool:
         """
-        发送审核结果回调给Spring Boot
+        发送评审结果回调给Spring Boot
 
         Args:
             submission_id: 提交ID
-            report: AI审核报告（Pydantic对象或dict）
+            report: AI评审报告（Pydantic对象或dict）
 
         Returns:
             bool: 是否成功
@@ -41,6 +41,8 @@ class CallbackService:
             "submissionId": submission_id,
             "report": report_dict
         }
+
+        logger.info(f"📦 Callback payload: {callback_payload}")
 
         logger.debug(f"Callback payload prepared")
 

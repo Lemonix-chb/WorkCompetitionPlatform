@@ -9,51 +9,51 @@
 
       <!-- Stats Cards -->
       <div class="stats-section scale-in">
-        <div class="grid grid-4">
-          <div class="stat-card card card-flat">
+        <div class="grid-4-equal">
+          <div class="stat-card card">
             <div class="stat-icon">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <rect x="4" y="4" width="24" height="24" rx="4" stroke="#5a7fa8" stroke-width="2"/>
-                <path d="M9 12H23M9 16H23M9 20H17" stroke="#5a7fa8" stroke-width="2" stroke-linecap="round"/>
+              <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+                <rect x="4" y="4" width="24" height="24" rx="4" stroke="currentColor" stroke-width="2"/>
+                <path d="M9 12H23M9 16H23M9 20H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
             <div class="stat-number">{{ stats.competitionCount }}</div>
-            <div class="stat-label caption">赛事报名</div>
+            <div class="stat-label">赛事报名</div>
           </div>
 
-          <div class="stat-card card card-flat">
+          <div class="stat-card card">
             <div class="stat-icon">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <circle cx="10" cy="10" r="5" stroke="#5a7fa8" stroke-width="2"/>
-                <circle cx="22" cy="10" r="5" stroke="#5a7fa8" stroke-width="2"/>
-                <circle cx="16" cy="22" r="5" stroke="#5a7fa8" stroke-width="2"/>
-                <path d="M10 15V16C10 17.5 12 19 16 19C20 19 22 17.5 22 16V15" stroke="#5a7fa8" stroke-width="2"/>
+              <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+                <circle cx="10" cy="10" r="5" stroke="currentColor" stroke-width="2"/>
+                <circle cx="22" cy="10" r="5" stroke="currentColor" stroke-width="2"/>
+                <circle cx="16" cy="22" r="5" stroke="currentColor" stroke-width="2"/>
+                <path d="M10 15V16C10 17.5 12 19 16 19C20 19 22 17.5 22 16V15" stroke="currentColor" stroke-width="2"/>
               </svg>
             </div>
             <div class="stat-number">{{ stats.teamCount }}</div>
-            <div class="stat-label caption">团队参与</div>
+            <div class="stat-label">团队参与</div>
           </div>
 
-          <div class="stat-card card card-flat">
+          <div class="stat-card card">
             <div class="stat-icon">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <rect x="5" y="5" width="22" height="22" rx="3" stroke="#5a7fa8" stroke-width="2"/>
-                <path d="M10 10H22M10 14H22M10 18H18M10 22H15" stroke="#5a7fa8" stroke-width="2" stroke-linecap="round"/>
+              <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+                <rect x="5" y="5" width="22" height="22" rx="3" stroke="currentColor" stroke-width="2"/>
+                <path d="M10 10H22M10 14H22M10 18H18M10 22H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
             <div class="stat-number">{{ stats.workCount }}</div>
-            <div class="stat-label caption">作品提交</div>
+            <div class="stat-label">作品提交</div>
           </div>
 
-          <div class="stat-card card card-flat">
+          <div class="stat-card card">
             <div class="stat-icon">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                <circle cx="16" cy="10" r="7" stroke="#5a7fa8" stroke-width="2"/>
-                <path d="M11 17L8 28L16 24L24 28L21 17" stroke="#5a7fa8" stroke-width="2" stroke-linejoin="round"/>
+              <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="10" r="7" stroke="currentColor" stroke-width="2"/>
+                <path d="M11 17L8 28L16 24L24 28L21 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
               </svg>
             </div>
             <div class="stat-number">{{ stats.awardCount }}</div>
-            <div class="stat-label caption">获奖数量</div>
+            <div class="stat-label">获奖数量</div>
           </div>
         </div>
       </div>
@@ -61,14 +61,14 @@
       <!-- Quick Actions -->
       <div class="actions-section slide-in">
         <h2 class="section-title">快速访问</h2>
-        <div class="grid grid-2">
+        <div class="grid-2-equal">
           <router-link to="/student/teams" class="action-card card card-hover">
             <div class="action-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <circle cx="8" cy="8" r="4" stroke="#5a7fa8" stroke-width="2"/>
-                <circle cx="16" cy="8" r="4" stroke="#5a7fa8" stroke-width="2"/>
-                <circle cx="12" cy="18" r="4" stroke="#5a7fa8" stroke-width="2"/>
-                <path d="M8 12V13C8 14 10 15 12 15C14 15 16 14 16 13V12" stroke="#5a7fa8" stroke-width="2"/>
+                <circle cx="8" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                <circle cx="16" cy="8" r="4" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="18" r="4" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 12V13C8 14 10 15 12 15C14 15 16 14 16 13V12" stroke="currentColor" stroke-width="2"/>
               </svg>
             </div>
             <div class="action-content">
@@ -77,7 +77,7 @@
             </div>
             <div class="action-arrow">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M7 5L12 10L7 15" stroke="#7f8c8d" stroke-width="2" stroke-linecap="round"/>
+                <path d="M7 5L12 10L7 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
           </router-link>
@@ -85,8 +85,8 @@
           <router-link to="/student/works" class="action-card card card-hover">
             <div class="action-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <rect x="4" y="4" width="16" height="16" rx="2" stroke="#5a7fa8" stroke-width="2"/>
-                <path d="M8 8H16M8 11H16M8 14H12" stroke="#5a7fa8" stroke-width="2" stroke-linecap="round"/>
+                <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 8H16M8 11H16M8 14H12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
             <div class="action-content">
@@ -95,7 +95,7 @@
             </div>
             <div class="action-arrow">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M7 5L12 10L7 15" stroke="#7f8c8d" stroke-width="2" stroke-linecap="round"/>
+                <path d="M7 5L12 10L7 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
           </router-link>
@@ -103,9 +103,9 @@
           <router-link to="/student/invitations" class="action-card card card-hover">
             <div class="action-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="8" r="5" stroke="#5a7fa8" stroke-width="2"/>
-                <path d="M6 20C6 17 9 15 12 15C15 15 18 17 18 20" stroke="#5a7fa8" stroke-width="2" stroke-linecap="round"/>
-                <path d="M18 8L21 8M21 8L21 5M21 8L21 11" stroke="#5a7fa8" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="8" r="5" stroke="currentColor" stroke-width="2"/>
+                <path d="M6 20C6 17 9 15 12 15C15 15 18 17 18 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M18 8L21 8M21 8L21 5M21 8L21 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
             <div class="action-content">
@@ -114,7 +114,7 @@
             </div>
             <div class="action-arrow">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M7 5L12 10L7 15" stroke="#7f8c8d" stroke-width="2" stroke-linecap="round"/>
+                <path d="M7 5L12 10L7 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
           </router-link>
@@ -122,8 +122,8 @@
           <router-link to="/student/profile" class="action-card card card-hover">
             <div class="action-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="8" r="5" stroke="#5a7fa8" stroke-width="2"/>
-                <path d="M6 20C6 17 9 15 12 15C15 15 18 17 18 20" stroke="#5a7fa8" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="8" r="5" stroke="currentColor" stroke-width="2"/>
+                <path d="M6 20C6 17 9 15 12 15C15 15 18 17 18 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
             <div class="action-content">
@@ -132,7 +132,7 @@
             </div>
             <div class="action-arrow">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M7 5L12 10L7 15" stroke="#7f8c8d" stroke-width="2" stroke-linecap="round"/>
+                <path d="M7 5L12 10L7 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
           </router-link>
@@ -172,10 +172,7 @@ onMounted(async () => {
 const fetchStats = async () => {
   try {
     const data = await get('/student/stats')
-
-    if (data.code === 200) {
-      stats.value = data.data
-    }
+    stats.value = data
   } catch (error) {
     showError('获取统计数据失败')
     console.error('获取统计数据失败', error)

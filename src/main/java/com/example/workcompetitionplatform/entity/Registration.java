@@ -64,25 +64,25 @@ public class Registration {
     private LocalDateTime registrationTime;
 
     /**
-     * 报名状态：DRAFT-草稿, PENDING-待审核, APPROVED-已通过, REJECTED-已拒绝
+     * 报名状态：DRAFT-草稿, PENDING-待评审, APPROVED-已通过, REJECTED-已拒绝, CANCELLED-已退赛
      */
     @TableField(value = "status")
     private RegistrationStatus status = RegistrationStatus.DRAFT;
 
     /**
-     * 审核意见
+     * 评审意见
      */
     @TableField(value = "review_comment")
     private String reviewComment;
 
     /**
-     * 审核人（管理员）ID
+     * 评审人（管理员）ID
      */
     @TableField(value = "reviewer_id")
     private Long reviewerId;
 
     /**
-     * 审核时间
+     * 评审时间
      */
     @TableField(value = "review_time")
     private LocalDateTime reviewTime;
@@ -104,8 +104,9 @@ public class Registration {
      */
     public enum RegistrationStatus {
         DRAFT,     // 草稿
-        PENDING,   // 待审核
+        PENDING,   // 待评审
         APPROVED,  // 已通过
-        REJECTED   // 已拒绝
+        REJECTED,  // 已拒绝
+        CANCELLED  // 已退赛
     }
 }

@@ -156,7 +156,7 @@ CREATE TABLE `team` (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '团队ID',
     team_code VARCHAR(50) UNIQUE NOT NULL COMMENT '团队编号（自动生成）',
     team_name VARCHAR(100) NOT NULL COMMENT '团队名称',
-    competition_track_id BIGINT NOT NULL COMMENT '所属赛道ID',
+    competition_track_id BIGINT NULL COMMENT '所属赛道ID（报名时确定，创建团队时可为空）',
     leader_id BIGINT NOT NULL COMMENT '队长用户ID',
     current_member_count INT DEFAULT 1 COMMENT '当前成员数量',
     max_member_count INT DEFAULT 3 COMMENT '最大成员数量',
@@ -466,9 +466,9 @@ CREATE TABLE `system_config` (
 
 -- 1. 初始化角色数据
 INSERT INTO `role` (`role_name`, `role_code`, `description`) VALUES
-('管理员', 'ADMIN', '赛事组织者，可管理赛事、审核报名、分配评委'),
-('评委', 'JUDGE', '评审专家，可查看作品、打分、填写评语'),
-('参赛者', 'PARTICIPANT', '参赛学生，可组建团队、提交作品、查看结果');
+('管理员', 'ADMIN', '赛事组织者,可管理赛事、审核报名、分配评委'),
+('评委', 'JUDGE', '评审专家,可查看作品、打分、填写评语'),
+('参赛者', 'STUDENT', '参赛学生,可组建团队、提交作品、查看结果');
 
 -- 2. 初始化管理员用户（密码: admin123，使用BCrypt加密）
 INSERT INTO `user` (`username`, `password`, `real_name`, `email`, `phone`, `college`, `status`) VALUES

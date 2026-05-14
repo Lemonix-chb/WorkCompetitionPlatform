@@ -1,27 +1,45 @@
 <template>
   <aside class="sidebar" :class="{ 'sidebar-collapsed': collapsed, 'sidebar-mobile-open': mobileOpen }">
-    <!-- Logo Section -->
+    <!-- Academic Header -->
     <div class="sidebar-header">
       <div class="logo-container">
-        <div class="logo-icon">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="#5a7fa8"/>
-            <path d="M8 16H24M16 8V24" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <div class="academic-logo">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <!-- Academic Shield -->
+            <path d="M20 2L36 8V20C36 30 28 36 20 38C12 36 4 30 4 20V8L20 2Z"
+                  fill="var(--color-primary)"
+                  stroke="var(--color-accent)"
+                  stroke-width="1"/>
+            <!-- Inner Star -->
+            <path d="M20 10L21.5 14L26 14L22 17L23.5 21L20 18L16.5 21L18 17L14 14L18.5 14L20 10Z"
+                  fill="var(--color-accent)"/>
+            <!-- Laurels -->
+            <path d="M12 28C12 28 14 24 16 26M24 26C24 26 26 24 28 28"
+                  stroke="var(--color-accent)"
+                  stroke-width="1"
+                  stroke-linecap="round"/>
           </svg>
         </div>
-        <span v-if="!collapsed" class="logo-text">竞赛管理系统</span>
+        <div v-if="!collapsed" class="logo-text-container">
+          <span class="logo-title">竞赛评审系统</span>
+          <span class="logo-subtitle">Competition Review</span>
+        </div>
       </div>
       <button class="sidebar-toggle" @click="toggleSidebar" v-if="!isMobile">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M6 6L14 14M14 6L6 14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M5 5L13 13M13 5L5 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </button>
     </div>
 
-    <!-- Navigation -->
+    <!-- Navigation with Academic Sections -->
     <nav class="sidebar-nav">
+      <!-- Main Navigation -->
       <div class="nav-section">
-        <div v-if="!collapsed" class="nav-section-title">导航菜单</div>
+        <div v-if="!collapsed" class="nav-section-header">
+          <span class="nav-section-title">主要功能</span>
+          <div class="nav-section-divider"></div>
+        </div>
 
         <router-link
           v-for="item in menuItems"
@@ -34,11 +52,15 @@
             <component :is="getIconComponent(item.icon)" />
           </div>
           <span v-if="!collapsed" class="nav-item-text">{{ item.name }}</span>
+          <span v-if="!collapsed && isActive(item.path)" class="nav-item-badge"></span>
         </router-link>
       </div>
 
+      <!-- Footer Navigation -->
       <div class="nav-section nav-section-bottom">
-        <router-link to="/competitions" class="nav-item">
+        <div v-if="!collapsed" class="nav-section-divider"></div>
+
+        <router-link to="/competitions" class="nav-item nav-item-public">
           <div class="nav-item-icon">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
@@ -51,8 +73,15 @@
         <div class="nav-item nav-item-logout" @click="logout">
           <div class="nav-item-icon">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M7 17H5C4 17 3 16 3 15V5C3 4 4 3 5 3H7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M14 13L17 10L14 7M17 10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 17H5C4 17 3 16 3 15V5C3 4 4 3 5 3H7"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"/>
+              <path d="M14 13L17 10L14 7M17 10H7"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"/>
             </svg>
           </div>
           <span v-if="!collapsed" class="nav-item-text">退出登录</span>
@@ -60,7 +89,7 @@
       </div>
     </nav>
 
-    <!-- Mobile Toggle -->
+    <!-- Mobile Toggle Button -->
     <button
       class="sidebar-mobile-toggle"
       @click="toggleMobile"
@@ -78,7 +107,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
-// Import icon components from JS file
 import {
   HomeIcon,
   TeamIcon,
@@ -201,19 +229,21 @@ onUnmounted(() => {
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 12px rgba(13, 33, 55, 0.15);
+  border-right: 2px solid rgba(52, 152, 219, 0.1);
 }
 
 .sidebar-collapsed {
-  width: var(--sidebar-collapsed-width);
+  width: var(--sidebar-collapsed);
 }
 
 .sidebar-header {
-  padding: 24px 16px;
+  padding: 20px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 2px solid rgba(52, 152, 219, 0.15);
+  background: rgba(13, 33, 55, 0.02);
 }
 
 .logo-container {
@@ -223,42 +253,61 @@ onUnmounted(() => {
   flex: 1;
 }
 
-.logo-icon {
+.academic-logo {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  filter: drop-shadow(0 0 6px rgba(52, 152, 219, 0.4));
 }
 
-.logo-text {
+.logo-text-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.logo-title {
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 600;
   color: var(--color-text-white);
   white-space: nowrap;
-  opacity: 1;
-  transition: opacity var(--transition-fast);
+  letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
-.sidebar-collapsed .logo-text {
-  opacity: 0;
-  width: 0;
+.logo-subtitle {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(52, 152, 219, 0.8);
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-collapsed .logo-text-container {
+  display: none;
 }
 
 .sidebar-toggle {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: var(--radius-sm);
+  background: rgba(52, 152, 219, 0.12);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  border-radius: var(--radius-md);
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background var(--transition-fast);
-  color: white;
+  transition: all var(--transition-fast);
+  color: var(--color-accent);
 }
 
 .sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(52, 152, 219, 0.18);
+  border-color: var(--color-accent);
+  color: var(--color-accent-light);
 }
 
 .sidebar-nav {
@@ -267,6 +316,22 @@ onUnmounted(() => {
   flex-direction: column;
   padding: 16px 8px;
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(52, 152, 219, 0.3) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(52, 152, 219, 0.3);
+  border-radius: 2px;
 }
 
 .nav-section {
@@ -275,36 +340,52 @@ onUnmounted(() => {
   gap: 4px;
 }
 
+.nav-section-header {
+  margin-bottom: 8px;
+}
+
 .nav-section-title {
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
-  padding: 8px 8px;
-  letter-spacing: 0.05em;
+  color: rgba(52, 152, 219, 0.6);
+  padding: 8px 8px 4px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  display: block;
+}
+
+.nav-section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(52, 152, 219, 0.3) 0%, transparent 100%);
+  margin: 4px 8px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 12px 10px;
   border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   transition: all var(--transition-fast);
   cursor: pointer;
   position: relative;
+  border: 1px solid transparent;
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(52, 152, 219, 0.08);
   color: var(--color-text-white);
+  border-color: rgba(52, 152, 219, 0.15);
 }
 
 .nav-item-active {
-  background: rgba(90, 127, 168, 0.15);
+  background: rgba(52, 152, 219, 0.12);
   color: var(--color-accent-light);
+  border-color: rgba(52, 152, 219, 0.25);
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.2);
 }
 
 .nav-item-active::before {
@@ -315,8 +396,9 @@ onUnmounted(() => {
   transform: translateY(-50%);
   width: 3px;
   height: 24px;
-  background: var(--color-accent-light);
+  background: var(--color-accent);
   border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 6px rgba(52, 152, 219, 0.5);
 }
 
 .nav-item-icon {
@@ -329,35 +411,52 @@ onUnmounted(() => {
 }
 
 .nav-item-text {
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  opacity: 1;
-  transition: opacity var(--transition-fast);
+  letter-spacing: 0.01em;
 }
 
-.sidebar-collapsed .nav-item-text {
-  opacity: 0;
-  width: 0;
+.nav-item-badge {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 6px rgba(52, 152, 219, 0.6);
+}
+
+.sidebar-collapsed .nav-item-text,
+.sidebar-collapsed .nav-item-badge {
+  display: none;
 }
 
 .sidebar-collapsed .nav-item {
   justify-content: center;
+  padding: 12px 6px;
 }
 
 .nav-section-bottom {
   margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 16px;
 }
 
-.nav-item-logout {
+.nav-item-public {
   color: rgba(255, 255, 255, 0.6);
+}
+
+.nav-item-public:hover {
+  color: var(--color-accent-light);
+}
+
+.nav-item-logout {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .nav-item-logout:hover {
   color: #e74c3c;
-  background: rgba(231, 76, 60, 0.1);
+  background: rgba(231, 76, 60, 0.12);
+  border-color: rgba(231, 76, 60, 0.25);
 }
 
 .sidebar-mobile-toggle {
@@ -367,14 +466,20 @@ onUnmounted(() => {
   width: 48px;
   height: 48px;
   background: var(--color-bg-sidebar);
-  border-radius: var(--radius-md);
+  border: 2px solid rgba(52, 152, 219, 0.2);
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 1001;
-  color: white;
-  box-shadow: var(--shadow-card);
+  color: var(--color-accent);
+  box-shadow: 0 4px 12px rgba(13, 33, 55, 0.2);
+}
+
+.sidebar-mobile-toggle:hover {
+  background: rgba(52, 152, 219, 0.12);
+  border-color: var(--color-accent);
 }
 
 @media (max-width: 768px) {

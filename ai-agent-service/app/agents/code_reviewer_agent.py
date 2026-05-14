@@ -1,7 +1,7 @@
 """
-CodeReviewerAgent - 代码作品审核专家
+CodeReviewerAgent - 代码作品评审专家
 
-职责：审核程序设计作品（CODE_TRACK）
+职责：评审程序设计作品（CODE_TRACK）
 
 官方评分维度（校教发〔2024〕77号文件）：
 - 创新性（技术方案创新程度）: 0-25分
@@ -21,17 +21,19 @@ CodeReviewerAgent - 代码作品审核专家
 - JPlagTool：代码相似度检测
 - CodeExecutionTool：代码运行测试
 - CheckstyleTool：代码规范检查
-
-作者：AI Agent架构重构项目
-创建时间：2026-05-03
 """
 
 import os
+import json
+import shutil
+import zipfile
+import tempfile
 import logging
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
+from app.utils.llm_utils import extract_json_from_llm_output
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,7 @@ class CodeReviewOutput(BaseModel):
     practicality_score: float = Field(description="实用性评分（0-25分）", ge=0, le=25)
     user_experience_score: float = Field(description="用户体验评分（0-25分）", ge=0, le=25)
     code_quality_score: float = Field(description="代码质量评分（0-25分）", ge=0, le=25)
+    documentation_score: float = Field(description="文档完整性评分（0-25分）", ge=0, le=25)
 
     # 硬性要求合规性
     compliance_check: Dict[str, Any] = Field(description="硬性要求合规性检查结果")
@@ -63,7 +66,7 @@ class CodeReviewOutput(BaseModel):
 
 class CodeReviewerAgent:
     """
-    代码审核专家Agent
+    代码评审专家Agent
 
     官方评分维度：
     - 创新性（技术方案创新程度）
@@ -79,12 +82,12 @@ class CodeReviewerAgent:
 
     def __init__(
         self,
-        model_name: str = "deepseek-chat",
+        model_name: str = "deepseek-v4-pro",
         api_key: Optional[str] = None,
         base_url: Optional[str] = None
     ):
         """
-        初始化代码审核Agent
+        初始化代码评审Agent
 
         Args:
             model_name: DeepSeek模型名称
@@ -117,7 +120,7 @@ class CodeReviewerAgent:
         additional_files: Optional[List[str]] = None
     ) -> CodeReviewOutput:
         """
-        完整代码审核流程
+        完整代码评审流程
 
         Args:
             code_path: 代码文件/目录路径
@@ -129,19 +132,36 @@ class CodeReviewerAgent:
         Returns:
             CodeReviewOutput: 结构化评审报告
         """
-        logger.info(f"开始代码审核：{code_path}")
+        logger.info(f"开始代码评审：{code_path}, 语言：{language}")
+
+        # ========== 步骤0：处理压缩包（新增） ==========
+        extracted_dir = None
+        actual_code_path = code_path
+
+        if code_path.endswith('.zip') or code_path.endswith('.rar'):
+            logger.info("步骤0：解压压缩包...")
+            extracted_dir = self._extract_zip_file(code_path)
+            if extracted_dir:
+                actual_code_path = extracted_dir
+                logger.info(f"压缩包已解压到：{extracted_dir}")
+            else:
+                logger.warning("压缩包解压失败，将使用原始路径")
 
         # ========== 步骤1：代码元数据提取 ==========
         logger.info("步骤1：代码元数据提取...")
-        code_metadata = self._extract_code_metadata(code_path, language)
+        code_metadata = self._extract_code_metadata(actual_code_path, language)
 
         # ========== 步骤2：硬性要求检查 ==========
         logger.info("步骤2：硬性要求检查...")
-        compliance_check = self._check_compliance(code_metadata, readme_content)
+        compliance_check = self._check_compliance(code_metadata, readme_content, work_description)
 
         # ========== 步骤3：代码质量分析（基础版） ==========
         logger.info("步骤3：代码质量分析...")
         code_quality_score = self._analyze_code_quality(code_metadata)
+
+        # ========== 步骤3.5：读取实际代码内容 ==========
+        logger.info("步骤3.5：读取实际代码内容...")
+        code_content = self._read_code_content(code_metadata)
 
         # ========== 步骤4：DeepSeek LLM评审推理 ==========
         logger.info("步骤4：DeepSeek LLM评审推理...")
@@ -152,7 +172,8 @@ class CodeReviewerAgent:
             compliance_check=compliance_check,
             work_description=work_description,
             readme_content=readme_content,
-            code_quality_score=code_quality_score
+            code_quality_score=code_quality_score,
+            code_content=code_content
         )
 
         # 调用LLM
@@ -169,9 +190,39 @@ class CodeReviewerAgent:
             code_quality_score=code_quality_score
         )
 
-        logger.info(f"代码审核完成，总分：{review_result.overall_score}")
+        logger.info(f"代码评审完成，总分：{review_result.overall_score}")
+
+        # 清理临时解压目录
+        if extracted_dir:
+            shutil.rmtree(extracted_dir, ignore_errors=True)
+            logger.info(f"已清理临时目录：{extracted_dir}")
 
         return review_result
+
+    def _extract_zip_file(self, zip_path: str) -> Optional[str]:
+        """
+        解压压缩包到临时目录
+
+        Args:
+            zip_path: 压缩包路径
+
+        Returns:
+            str: 解压后的目录路径，失败返回None
+        """
+        try:
+            # 创建临时目录
+            temp_dir = tempfile.mkdtemp(prefix="code_review_")
+
+            # 解压
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+
+            logger.info(f"压缩包解压成功：{zip_path} -> {temp_dir}")
+            return temp_dir
+
+        except Exception as e:
+            logger.error(f"压缩包解压失败：{e}")
+            return None
 
     def _extract_code_metadata(self, code_path: str, language: str) -> Dict[str, Any]:
         """
@@ -262,20 +313,22 @@ class CodeReviewerAgent:
     def _check_compliance(
         self,
         code_metadata: Dict[str, Any],
-        readme_content: Optional[str]
+        readme_content: Optional[str],
+        work_description: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         检查硬性要求合规性
 
         检查项：
         1. 源代码文件存在性
-        2. 说明文档完整性（README存在）
+        2. 说明文档完整性（README或docx均可）
         3. 代码文件数量合理性（至少有代码）
         4. 代码行数合理性（至少100行）
 
         Args:
             code_metadata: 代码元数据
             readme_content: README文件内容
+            work_description: 作品说明（可能包含docx文档内容）
 
         Returns:
             dict: 合规性检查结果
@@ -290,12 +343,15 @@ class CodeReviewerAgent:
             else "源代码文件不存在"
         )
 
-        # 2. 说明文档完整性
-        compliance["readme_exists"] = readme_content is not None and len(readme_content) > 100
+        # 2. 说明文档完整性（README、docx等均可）
+        # 检查readme_content或work_description中是否包含说明文档内容
+        has_readme = readme_content is not None and len(readme_content) > 100
+        has_doc_in_description = "【说明文档内容】" in (work_description or "")
+        compliance["readme_exists"] = has_readme or has_doc_in_description
         compliance["readme_message"] = (
             "说明文档完整，符合要求"
             if compliance["readme_exists"]
-            else "说明文档不完整或不存在"
+            else "未提供说明文档（README、docx、pdf、txt等均可）"
         )
 
         # 3. 代码文件数量合理性
@@ -358,9 +414,60 @@ class CodeReviewerAgent:
 
         return round(base_score + line_score + comment_score + file_score, 2)
 
+    def _read_code_content(self, code_metadata: Dict[str, Any], max_chars: int = 15000) -> str:
+        """
+        读取实际源代码内容（用于传给LLM评审）
+
+        Args:
+            code_metadata: 代码元数据（含code_files列表和main_file）
+            max_chars: 总字符上限，防止超过LLM上下文窗口
+
+        Returns:
+            str: 格式化的代码内容字符串
+        """
+        MAX_FILE_CHARS = 5000
+        code_files = code_metadata.get("code_files", [])
+        main_file = code_metadata.get("main_file")
+
+        if not code_files:
+            return "（未找到源代码文件）"
+
+        # 排序：主文件优先
+        ordered_files = []
+        if main_file and main_file in code_files:
+            ordered_files.append(main_file)
+        ordered_files.extend(f for f in code_files if f != main_file)
+
+        parts = []
+        total_chars = 0
+
+        for file_path in ordered_files:
+            if total_chars >= max_chars:
+                parts.append(f"\n... 还有 {len(ordered_files) - len(parts)} 个文件未展示（已达内容上限）")
+                break
+
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read(MAX_FILE_CHARS + 1)
+
+                file_name = os.path.basename(file_path)
+
+                # 单文件截断
+                if len(content) > MAX_FILE_CHARS:
+                    content = content[:MAX_FILE_CHARS] + f"\n... （文件过长，已截断）"
+
+                entry = f"\n===== {file_name} =====\n{content}"
+                parts.append(entry)
+                total_chars += len(entry)
+
+            except Exception as e:
+                logger.warning(f"无法读取代码文件 {file_path}: {e}")
+
+        return '\n'.join(parts)
+
     def _get_system_prompt(self) -> str:
         """系统提示词：定义代码评审角色和标准"""
-        return """你是一位专业的代码作品评审专家，负责审核大学生计算机设计大赛的程序设计作品。
+        return """你是一位专业的代码作品评审专家，负责评审大学生计算机设计大赛的程序设计作品。
 
 评审标准（根据校教发〔2024〕77号文件）：
 
@@ -384,7 +491,11 @@ class CodeReviewerAgent:
    - 代码规范（是否符合语言标准）
    - 可读性（命名规范、代码结构）
    - 注释完整性（关键逻辑是否有注释）
-   - 文档完整性（README、技术文档）
+
+5. 文档完整性（25分）：
+   - 说明文档是否存在（README、docx、pdf、txt均可）
+   - 文档内容质量（是否清晰描述项目功能、使用方法）
+   - 技术文档完整性（是否有架构说明、API文档等）
 
 【硬性要求检查】：
 - 源代码可运行（编译/运行测试）
@@ -406,6 +517,7 @@ class CodeReviewerAgent:
   "practicality_score": 实用性评分（0-25）,
   "user_experience_score": 用户体验评分（0-25）,
   "code_quality_score": 代码质量评分（0-25）,
+  "documentation_score": 文档完整性评分（0-25）,
   "review_summary": "评审总结（200-500字）",
   "strengths": ["亮点1", "亮点2", ...],
   "weaknesses": ["不足1", "不足2", ...],
@@ -418,7 +530,8 @@ class CodeReviewerAgent:
         compliance_check: Dict[str, Any],
         work_description: str,
         readme_content: Optional[str],
-        code_quality_score: float
+        code_quality_score: float,
+        code_content: str = ""
     ) -> str:
         """构建代码评审提示词"""
 
@@ -444,6 +557,9 @@ class CodeReviewerAgent:
 
 【代码质量初步评分】：{code_quality_score}/25分（基于代码行数、注释比例等）
 
+【源代码内容】：
+{code_content if code_content else '（未读取到代码内容）'}
+
 【作品说明】：
 {work_description}
 
@@ -462,17 +578,8 @@ class CodeReviewerAgent:
         code_quality_score: float
     ) -> CodeReviewOutput:
         """解析LLM输出为结构化评审结果"""
-        import json
-
         try:
-            # 提取JSON部分
-            json_str = llm_output
-            if "```json" in llm_output:
-                json_str = llm_output.split("```json")[1].split("```")[0].strip()
-            elif "```" in llm_output:
-                json_str = llm_output.split("```")[1].split("```")[0].strip()
-
-            result_dict = json.loads(json_str)
+            result_dict = extract_json_from_llm_output(llm_output)
 
             # 构建CodeReviewOutput对象
             review_output = CodeReviewOutput(
@@ -481,6 +588,7 @@ class CodeReviewerAgent:
                 practicality_score=result_dict.get("practicality_score", 15),
                 user_experience_score=result_dict.get("user_experience_score", 15),
                 code_quality_score=result_dict.get("code_quality_score", code_quality_score),
+                documentation_score=result_dict.get("documentation_score", 10),
                 compliance_check=compliance_check,
                 review_summary=result_dict.get("review_summary", ""),
                 strengths=result_dict.get("strengths", []),
@@ -501,6 +609,7 @@ class CodeReviewerAgent:
                 practicality_score=15,
                 user_experience_score=15,
                 code_quality_score=code_quality_score,
+                documentation_score=10,
                 compliance_check=compliance_check,
                 review_summary="评审结果解析失败",
                 strengths=["评审解析失败"],

@@ -111,11 +111,11 @@ public class JwtUtils {
         Date expirationDate = new Date(now.getTime() + expirationTime);
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(now)
-                .setExpiration(expirationDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(now)
+                .expiration(expirationDate)
+                .signWith(getSigningKey())
                 .compact();
     }
 
@@ -158,11 +158,12 @@ public class JwtUtils {
      * @return 所有声明
      */
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        return Jwts
+                .parser()
+                .verifyWith(getSigningKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     /**
@@ -196,10 +197,10 @@ public class JwtUtils {
      */
     public Boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
+            Jwts.parser()
+                    .verifyWith(getSigningKey())
                     .build()
-                    .parseClaimsJws(token);
+                    .parseSignedClaims(token);
             return !isTokenExpired(token);
         } catch (JwtException | IllegalArgumentException e) {
             return false;

@@ -22,66 +22,112 @@
         </div>
 
         <!-- Competitions Grid -->
-        <div v-else-if="competitions.length > 0" class="grid grid-auto">
-          <div v-for="comp in competitions" :key="comp.id" class="competition-card card card-hover">
-            <!-- Header -->
-            <div class="card-header">
-              <h3 class="card-title">{{ comp.competitionName }}</h3>
-              <span :class="getStatusClass(comp)" class="badge">
+        <div v-else-if="competitions.length > 0" class="competitions-grid-apple">
+          <div v-for="comp in competitions" :key="comp.id" class="competition-card-apple">
+            <!-- Competition Header -->
+            <div class="competition-header">
+              <div class="competition-title-section">
+                <h3 class="competition-name">{{ comp.competitionName }}</h3>
+                <div class="competition-year-badge">{{ comp.competitionYear }}</div>
+              </div>
+              <span :class="getStatusClass(comp)" class="status-badge">
                 {{ getStatusText(comp) }}
               </span>
             </div>
 
-            <!-- Countdown -->
-            <div v-if="getCountdownText(comp)" class="countdown-section mb-md">
-              <span class="countdown-text accent">{{ getCountdownText(comp) }}</span>
+            <!-- Countdown Banner (固定高度区域) -->
+            <div class="countdown-banner-wrapper">
+              <div v-if="getCountdownText(comp)" class="countdown-banner">
+                <div class="countdown-icon">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="M9 5V9L12 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <span class="countdown-text">{{ getCountdownText(comp) }}</span>
+              </div>
+              <div v-else class="countdown-placeholder"></div>
             </div>
 
-            <!-- Description -->
-            <p class="body-text mb-lg">{{ comp.description }}</p>
+            <!-- Competition Stats -->
+            <div class="competition-stats">
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">主办单位</div>
+                  <div class="stat-value">{{ comp.organizer }}</div>
+                </div>
+              </div>
 
-            <!-- Info -->
-            <div class="info-grid mb-lg">
-              <div class="info-item">
-                <span class="info-label caption">赛事年份</span>
-                <span class="info-value body-text">{{ comp.competitionYear }}</span>
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 6V10L13 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">报名截止</div>
+                  <div class="stat-value">{{ formatDate(comp.registrationEnd) }}</div>
+                </div>
               </div>
-              <div class="info-item">
-                <span class="info-label caption">主办单位</span>
-                <span class="info-value body-text">{{ comp.organizer }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label caption">报名截止</span>
-                <span class="info-value caption">{{ formatDate(comp.registrationEnd) }}</span>
+
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 4H16V16H4V4H10Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 4V8M8 6H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">赛道数</div>
+                  <div class="stat-value">{{ comp.trackCount || 3 }}</div>
+                </div>
               </div>
             </div>
 
-            <!-- Action -->
-            <div class="card-footer">
-              <button
-                v-if="isRegistered(comp)"
-                class="btn-secondary"
-                disabled
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
-                  <path d="M7 10L9 12L13 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Description (固定高度，截断) -->
+            <div class="competition-description">
+              <p class="description-text">{{ comp.description || '暂无描述' }}</p>
+            </div>
+
+            <!-- Action Buttons (固定高度) -->
+            <div class="competition-actions">
+              <!-- 已报名 -->
+              <div v-if="isRegistered(comp)" class="action-btn-group">
+                <span class="action-btn-registered">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M6 9L8 11L12 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>已报名</span>
+                </span>
+                <button class="action-btn-withdraw" @click="handleWithdraw(comp)" :disabled="withdrawing">
+                  退赛
+                </button>
+              </div>
+
+              <!-- 可报名 -->
+              <button v-else-if="canRegister(comp)" class="action-btn-primary" @click="handleRegister(comp)">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <rect x="4" y="4" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M7 7H11M7 9H11M7 11H9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
-                已报名
+                <span>报名参赛</span>
               </button>
-              <button
-                v-else-if="canRegister(comp)"
-                class="btn-primary"
-                @click="handleRegister(comp)"
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
-                  <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+
+              <!-- 已截止 -->
+              <button v-else class="action-btn-disabled" disabled>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M6 6L12 12M12 6L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
-                报名参赛
-              </button>
-              <button v-else class="btn-disabled" disabled>
-                报名已截止
+                <span>报名已截止</span>
               </button>
             </div>
           </div>
@@ -201,9 +247,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCompetitionStore } from '../../stores/competition'
-import { get, post } from '@/utils/api'
+import { get, post, del } from '@/utils/api'
 import { showSuccess, showError, showWarning } from '@/utils/messageUtils'
 import { formatDateTime } from '@/utils/dateUtils'
 
@@ -220,6 +266,7 @@ const selectedTrackId = ref(null)
 const selectedTeamId = ref(null)
 const showRegistrationDialog = ref(false)
 const registering = ref(false)
+const withdrawing = ref(false)
 const timeStatusMap = ref({})
 
 onMounted(async () => {
@@ -241,6 +288,12 @@ onMounted(async () => {
 })
 
 const fetchAllTimeStatuses = async () => {
+  if (!competitions.value || competitions.value.length === 0) {
+    console.log('No competitions available, time status check skipped')
+    // 不显示警告，只在控制台记录日志
+    return
+  }
+
   const promises = competitions.value.map(comp =>
     get(`/competitions/${comp.id}/time-status`)
       .then(status => {
@@ -334,6 +387,29 @@ const confirmRegistration = async () => {
   }
 }
 
+const handleWithdraw = async (comp) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要退出「${comp.competitionName}」吗？退赛后需要重新报名才能参赛。`,
+      '退赛确认',
+      { confirmButtonText: '确定退赛', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+
+  withdrawing.value = true
+  try {
+    await del(`/registrations?competitionId=${comp.id}`)
+    showSuccess('退赛成功')
+    await fetchMyRegistrations()
+  } catch (error) {
+    showError('退赛失败，请稍后重试')
+  } finally {
+    withdrawing.value = false
+  }
+}
+
 const getSelectedTrackName = () => {
   const track = tracks.value.find(t => t.id === selectedTrackId.value)
   return track ? track.trackName : ''
@@ -421,8 +497,9 @@ const canRegister = (comp) => {
 }
 
 const isRegistered = (comp) => {
-  // 检查用户是否已报名该赛事
-  return userRegistrations.value.some(reg => reg.competitionId === comp.id)
+  return userRegistrations.value.some(
+    reg => reg.competitionId === comp.id && reg.status !== 'CANCELLED'
+  )
 }
 </script>
 
@@ -458,63 +535,279 @@ const isRegistered = (comp) => {
   to { transform: rotate(360deg); }
 }
 
-.competition-card {
-  padding: var(--spacing-xl);
+/* Apple-style Competition Cards Grid */
+.competitions-grid-apple {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--spacing-xl);
 }
 
-.card-header {
+.competition-card-apple {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 247, 0.92) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: var(--spacing-xl);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+}
+
+.competition-card-apple:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 113, 227, 0.15);
+  border-color: rgba(0, 113, 227, 0.3);
+}
+
+/* Competition Header */
+.competition-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+  gap: var(--spacing-md);
 }
 
-.countdown-section {
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: rgba(90, 127, 168, 0.1);
-  border-radius: var(--radius-sm);
+.competition-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.competition-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: #000;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.competition-year-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-primary {
+  background: linear-gradient(135deg, #0071e3 0%, #0057b8 100%);
+  color: white;
+}
+
+.badge-accent {
+  background: linear-gradient(135deg, #34c759 0%, #2db54e 100%);
+  color: white;
+}
+
+.badge-warning {
+  background: linear-gradient(135deg, #ff9500 0%, #e68600 100%);
+  color: white;
+}
+
+.badge-gray {
+  background: rgba(142, 142, 147, 0.15);
+  color: #8e8e93;
+}
+
+/* Countdown Banner (Fixed Height) */
+.countdown-banner-wrapper {
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: var(--spacing-md);
   display: flex;
   align-items: center;
-  justify-content: center;
+}
+
+.countdown-banner {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.15) 0%, rgba(255, 149, 0, 0.08) 100%);
+  border: 1px solid rgba(255, 149, 0, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ff9500;
+}
+
+.countdown-icon {
+  display: flex;
+  align-items: center;
 }
 
 .countdown-text {
-  font-weight: 600;
   font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-.btn-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--color-border);
-  color: var(--color-text-secondary);
-  border: none;
-  pointer-events: none;
+.countdown-placeholder {
+  width: 100%;
+  min-height: 44px;
+  visibility: hidden;
 }
 
-.info-grid {
+/* Competition Stats (Three Columns) */
+.competition-stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
-.info-item {
+.stat-item {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: 8px;
 }
 
-.info-label {
-  color: var(--color-text-secondary);
+.stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(0, 113, 227, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0071e3;
 }
 
-.info-value {
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #8e8e93;
+  letter-spacing: 0.01em;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 14px;
+  color: #000;
   font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
-.card-footer {
-  margin-top: var(--spacing-lg);
+/* Description (Fixed Height) */
+.competition-description {
+  flex: 1;
+  margin-bottom: var(--spacing-lg);
+  min-height: 60px;
+}
+
+.description-text {
+  font-size: 14px;
+  color: #3c3c43;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Action Buttons (Fixed Height) */
+.competition-actions {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.action-btn-registered,
+.action-btn-primary,
+.action-btn-disabled {
+  padding: 12px 20px;
+  border-radius: 980px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-btn-registered {
+  background: rgba(52, 199, 89, 0.1);
+  color: #34c759;
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.action-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-btn-group .action-btn-registered {
+  padding: 12px 20px;
+  border-radius: 980px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  border: 1px solid rgba(52, 199, 89, 0.3);
+  background: rgba(52, 199, 89, 0.1);
+  color: #34c759;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.action-btn-withdraw {
+  padding: 10px 18px;
+  border-radius: 980px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  background: rgba(255, 59, 48, 0.08);
+  color: #ff3b30;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-btn-withdraw:hover:not(:disabled) {
+  background: rgba(255, 59, 48, 0.15);
+  border-color: rgba(255, 59, 48, 0.5);
+}
+
+.action-btn-withdraw:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn-primary {
+  background: linear-gradient(135deg, #0071e3 0%, #0057b8 100%);
+  color: white;
+  cursor: pointer;
+}
+
+.action-btn-primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+}
+
+.action-btn-disabled {
+  background: rgba(142, 142, 147, 0.15);
+  color: #8e8e93;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .empty-state {
@@ -544,28 +837,58 @@ const isRegistered = (comp) => {
   gap: var(--spacing-md);
 }
 
-.track-option,
-.team-option {
+/* Track Option Card (Fixed Height) */
+.track-option {
   padding: var(--spacing-lg);
   cursor: pointer;
-  transition: all var(--transition-fast);
-  border: 2px solid var(--color-border);
-  min-height: 120px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  height: 140px;  /* 固定高度 */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: relative;
+  overflow: hidden;
 }
 
 .track-option:hover {
-  border-color: var(--color-accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card);
+  border-color: rgba(0, 113, 227, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 113, 227, 0.12);
 }
 
-.track-selected,
+.track-selected {
+  border-color: #0071e3;
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.08) 0%, rgba(0, 113, 227, 0.04) 100%);
+}
+
+/* Team Option Card (Fixed Height) */
+.team-option {
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  height: 140px;  /* 固定高度 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.team-option:hover {
+  border-color: rgba(0, 113, 227, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 113, 227, 0.12);
+}
+
 .team-selected {
-  border-color: var(--color-accent);
-  background: rgba(90, 127, 168, 0.08);
+  border-color: #0071e3;
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.08) 0%, rgba(0, 113, 227, 0.04) 100%);
 }
 
 .track-header,
@@ -574,10 +897,42 @@ const isRegistered = (comp) => {
   justify-content: space-between;
   align-items: center;
   gap: var(--spacing-md);
+  margin-bottom: 12px;
+}
+
+.track-header .card-title,
+.team-header .card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* Track Description (截断显示) */
+.track-option .caption {
+  font-size: 14px;
+  color: #3c3c43;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;  /* 最多显示2行 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Team Info (Fixed Layout) */
+.team-option .caption {
+  font-size: 14px;
+  color: #3c3c43;
+  line-height: 1.4;
+  margin-bottom: 4px;
 }
 
 .confirmation-box {
   padding: var(--spacing-lg);
+  background: rgba(245, 245, 247, 0.95);
+  border-radius: 12px;
 }
 
 .info-row {
@@ -593,7 +948,11 @@ const isRegistered = (comp) => {
 }
 
 @media (max-width: 768px) {
-  .info-grid {
+  .competitions-grid-apple {
+    grid-template-columns: 1fr;
+  }
+
+  .competition-stats {
     grid-template-columns: 1fr;
   }
 

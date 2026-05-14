@@ -77,6 +77,42 @@ public class AIReviewReport {
     private BigDecimal documentationScore;
 
     /**
+     * 创意得分（PPT作品专用，0-25分）
+     */
+    @TableField(value = "creativity_score")
+    private BigDecimal creativityScore;
+
+    /**
+     * 视觉效果得分（PPT/VIDEO作品，0-25分）
+     */
+    @TableField(value = "visual_effect_score")
+    private BigDecimal visualEffectScore;
+
+    /**
+     * 内容呈现得分（PPT作品专用，0-25分）
+     */
+    @TableField(value = "content_presentation_score")
+    private BigDecimal contentPresentationScore;
+
+    /**
+     * 原创性得分（PPT/VIDEO作品，PPT: 0-25, VIDEO: 0-20）
+     */
+    @TableField(value = "originality_score")
+    private BigDecimal originalityScore;
+
+    /**
+     * 故事性得分（VIDEO作品专用，0-30分）
+     */
+    @TableField(value = "story_score")
+    private BigDecimal storyScore;
+
+    /**
+     * 导演技巧得分（VIDEO作品专用，0-25分）
+     */
+    @TableField(value = "director_skill_score")
+    private BigDecimal directorSkillScore;
+
+    /**
      * 重复率(%)
      */
     @TableField(value = "duplicate_rate")

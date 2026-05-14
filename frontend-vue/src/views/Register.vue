@@ -117,7 +117,7 @@ const handleRegister = async () => {
 
   try {
     await post('/auth/register', form.value)
-    showSuccess('注册成功，请等待管理员审核')
+    showSuccess('注册成功，请等待管理员评审')
     router.push('/login')
   } catch (error) {
     showError('注册失败，请检查网络连接')

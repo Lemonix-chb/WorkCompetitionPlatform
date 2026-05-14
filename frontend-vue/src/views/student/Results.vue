@@ -138,72 +138,169 @@
             <div class="score-title">综合评分</div>
           </div>
 
-          <!-- 维度评分 -->
+          <!-- 维度评分 - 根据作品类型动态显示 -->
           <div class="dimension-scores">
-            <div v-if="aiReviewDetail.innovationScore" class="dim-item">
-              <div class="dim-header">
-                <span class="dim-icon">💡</span>
-                <span class="dim-name">创新性</span>
+            <!-- CODE作品评分维度 -->
+            <div v-if="aiReviewDetail.workType === 'CODE'">
+              <div v-if="aiReviewDetail.innovationScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">💡</span>
+                  <span class="dim-name">创新性</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar" :style="{ width: (aiReviewDetail.innovationScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.innovationScore }} / 25</div>
               </div>
-              <div class="dim-progress">
-                <div class="dim-bar" :style="{ width: (aiReviewDetail.innovationScore / 25 * 100) + '%' }"></div>
+
+              <div v-if="aiReviewDetail.practicalityScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">🔧</span>
+                  <span class="dim-name">实用性</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar practicality" :style="{ width: (aiReviewDetail.practicalityScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.practicalityScore }} / 25</div>
               </div>
-              <div class="dim-value">{{ aiReviewDetail.innovationScore }} / 25</div>
+
+              <div v-if="aiReviewDetail.userExperienceScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">✨</span>
+                  <span class="dim-name">用户体验</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar experience" :style="{ width: (aiReviewDetail.userExperienceScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.userExperienceScore }} / 25</div>
+              </div>
+
+              <div v-if="aiReviewDetail.documentationScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">📖</span>
+                  <span class="dim-name">文档质量</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar documentation" :style="{ width: (aiReviewDetail.documentationScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.documentationScore }} / 25</div>
+              </div>
+
+              <div v-if="aiReviewDetail.codeQualityScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">⚡</span>
+                  <span class="dim-name">代码质量</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar code" :style="{ width: (aiReviewDetail.codeQualityScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.codeQualityScore }} / 25</div>
+              </div>
+
+              <div v-if="aiReviewDetail.duplicateRate != null" class="dim-item duplicate">
+                <div class="dim-header">
+                  <span class="dim-icon">🔄</span>
+                  <span class="dim-name">代码重复率</span>
+                </div>
+                <div class="dim-progress duplicate">
+                  <div class="dim-bar duplicate-bar" :style="{ width: String(aiReviewDetail.duplicateRate) + '%' }"></div>
+                </div>
+                <div class="dim-value warn">{{ aiReviewDetail.duplicateRate }}%</div>
+              </div>
             </div>
 
-            <div v-if="aiReviewDetail.practicalityScore" class="dim-item">
-              <div class="dim-header">
-                <span class="dim-icon">🔧</span>
-                <span class="dim-name">实用性</span>
+            <!-- PPT作品评分维度 -->
+            <div v-if="aiReviewDetail.workType === 'PPT'">
+              <div v-if="aiReviewDetail.creativityScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">🎨</span>
+                  <span class="dim-name">创意</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar creativity" :style="{ width: (aiReviewDetail.creativityScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.creativityScore }} / 25</div>
               </div>
-              <div class="dim-progress">
-                <div class="dim-bar practicality" :style="{ width: (aiReviewDetail.practicalityScore / 25 * 100) + '%' }"></div>
+
+              <div v-if="aiReviewDetail.visualEffectScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">👁️</span>
+                  <span class="dim-name">视觉效果</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar visual" :style="{ width: (aiReviewDetail.visualEffectScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.visualEffectScore }} / 25</div>
               </div>
-              <div class="dim-value">{{ aiReviewDetail.practicalityScore }} / 25</div>
+
+              <div v-if="aiReviewDetail.contentPresentationScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">📊</span>
+                  <span class="dim-name">内容呈现</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar content" :style="{ width: (aiReviewDetail.contentPresentationScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.contentPresentationScore }} / 25</div>
+              </div>
+
+              <div v-if="aiReviewDetail.originalityScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">🌟</span>
+                  <span class="dim-name">原创性</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar originality" :style="{ width: (aiReviewDetail.originalityScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.originalityScore }} / 25</div>
+              </div>
             </div>
 
-            <div v-if="aiReviewDetail.userExperienceScore" class="dim-item">
-              <div class="dim-header">
-                <span class="dim-icon">✨</span>
-                <span class="dim-name">用户体验</span>
+            <!-- VIDEO作品评分维度 -->
+            <div v-if="aiReviewDetail.workType === 'VIDEO'">
+              <div v-if="aiReviewDetail.storyScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">📖</span>
+                  <span class="dim-name">故事性</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar story" :style="{ width: (aiReviewDetail.storyScore / 30 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.storyScore }} / 30</div>
               </div>
-              <div class="dim-progress">
-                <div class="dim-bar experience" :style="{ width: (aiReviewDetail.userExperienceScore / 25 * 100) + '%' }"></div>
-              </div>
-              <div class="dim-value">{{ aiReviewDetail.userExperienceScore }} / 25</div>
-            </div>
 
-            <div v-if="aiReviewDetail.documentationScore" class="dim-item">
-              <div class="dim-header">
-                <span class="dim-icon">📖</span>
-                <span class="dim-name">文档质量</span>
+              <div v-if="aiReviewDetail.visualEffectScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">🎬</span>
+                  <span class="dim-name">视觉效果</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar visual" :style="{ width: (aiReviewDetail.visualEffectScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.visualEffectScore }} / 25</div>
               </div>
-              <div class="dim-progress">
-                <div class="dim-bar documentation" :style="{ width: (aiReviewDetail.documentationScore / 25 * 100) + '%' }"></div>
-              </div>
-              <div class="dim-value">{{ aiReviewDetail.documentationScore }} / 25</div>
-            </div>
 
-            <div v-if="aiReviewDetail.codeQualityScore" class="dim-item">
-              <div class="dim-header">
-                <span class="dim-icon">⚡</span>
-                <span class="dim-name">代码质量</span>
+              <div v-if="aiReviewDetail.directorSkillScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">🎯</span>
+                  <span class="dim-name">导演技巧</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar director" :style="{ width: (aiReviewDetail.directorSkillScore / 25 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.directorSkillScore }} / 25</div>
               </div>
-              <div class="dim-progress">
-                <div class="dim-bar code" :style="{ width: (aiReviewDetail.codeQualityScore / 25 * 100) + '%' }"></div>
-              </div>
-              <div class="dim-value">{{ aiReviewDetail.codeQualityScore }} / 25</div>
-            </div>
 
-            <div v-if="aiReviewDetail.duplicateRate != null" class="dim-item duplicate">
-              <div class="dim-header">
-                <span class="dim-icon">🔄</span>
-                <span class="dim-name">代码重复率</span>
+              <div v-if="aiReviewDetail.originalityScore" class="dim-item">
+                <div class="dim-header">
+                  <span class="dim-icon">🌟</span>
+                  <span class="dim-name">原创性</span>
+                </div>
+                <div class="dim-progress">
+                  <div class="dim-bar originality" :style="{ width: (aiReviewDetail.originalityScore / 20 * 100) + '%' }"></div>
+                </div>
+                <div class="dim-value">{{ aiReviewDetail.originalityScore }} / 20</div>
               </div>
-              <div class="dim-progress duplicate">
-                <div class="dim-bar duplicate-bar" :style="{ width: String(aiReviewDetail.duplicateRate) + '%' }"></div>
-              </div>
-              <div class="dim-value warn">{{ aiReviewDetail.duplicateRate }}%</div>
             </div>
           </div>
         </div>
@@ -897,6 +994,32 @@ const fetchResults = async () => {
 
 .dim-bar.documentation {
   background: linear-gradient(90deg, #4CAF50, #66BB6A);
+}
+
+/* PPT作品评分维度样式 */
+.dim-bar.creativity {
+  background: linear-gradient(90deg, #FF69B4, #DA70D6);
+}
+
+.dim-bar.visual {
+  background: linear-gradient(90deg, #00CED1, #20B2AA);
+}
+
+.dim-bar.content {
+  background: linear-gradient(90deg, #7B68EE, #6A5ACD);
+}
+
+.dim-bar.originality {
+  background: linear-gradient(90deg, #FFD700, #FFA500);
+}
+
+/* VIDEO作品评分维度样式 */
+.dim-bar.story {
+  background: linear-gradient(90deg, #4CAF50, #66BB6A);
+}
+
+.dim-bar.director {
+  background: linear-gradient(90deg, #FF9800, #FFB74D);
 }
 
 .dim-bar.code {

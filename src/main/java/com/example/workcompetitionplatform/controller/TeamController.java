@@ -59,10 +59,10 @@ public class TeamController {
 
     /**
      * 创建团队
-     * 用户创建新的参赛团队
+     * 用户创建新的参赛团队（创建时不需选择赛道，报名时选择）
      *
      * @param teamName 团队名称
-     * @param competitionTrackId 赛道ID
+     * @param competitionTrackId 赛道ID（可选）
      * @return API响应（包含创建的团队）
      */
     @Operation(summary ="创建团队")
@@ -70,7 +70,7 @@ public class TeamController {
     @PreAuthorize("hasRole('STUDENT') or hasRole('TEACHER')")
     public ApiResponse<Team> createTeam(
             @Parameter(description ="团队名称") @RequestParam String teamName,
-            @Parameter(description ="赛道ID") @RequestParam Long competitionTrackId) {
+            @Parameter(description ="赛道ID（可选）") @RequestParam(required = false) Long competitionTrackId) {
 
         try {
             // 获取当前用户ID作为队长
@@ -123,6 +123,21 @@ public class TeamController {
     }
 
     /**
+     * 查询团队的报名记录
+     * 获取团队已报名的竞赛列表
+     *
+     * @param id 团队ID
+     * @return API响应（包含报名记录列表）
+     */
+    @Operation(summary ="查询团队报名记录")
+    @GetMapping("/{id}/registrations")
+    public ApiResponse<List<com.example.workcompetitionplatform.entity.Registration>> listTeamRegistrations(
+            @Parameter(description ="团队ID") @PathVariable Long id) {
+        List<com.example.workcompetitionplatform.entity.Registration> registrations = teamService.listTeamRegistrations(id);
+        return ApiResponse.success(registrations);
+    }
+
+    /**
      * 查询团队成员
      * 查询指定团队的成员列表
      *
@@ -149,7 +164,7 @@ public class TeamController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<TeamInvitation> inviteMember(
             @Parameter(description ="团队ID") @PathVariable Long id,
-            @Parameter(description ="被邀请用户ID") @RequestParam Long invitedUserId) {
+            @Parameter(description ="被邀请人学号") @RequestParam String inviteeStudentNo) {
 
         try {
             // 获取当前用户ID作为邀请人
@@ -166,9 +181,9 @@ public class TeamController {
             }
 
             // 执行邀请
-            TeamInvitation invitation = teamService.inviteMember(id, inviterUserId, invitedUserId);
+            TeamInvitation invitation = teamService.inviteMember(id, inviterUserId, inviteeStudentNo);
 
-            log.info("成员邀请成功：团队 {} -> 用户 {}", id, invitedUserId);
+            log.info("成员邀请成功：团队 {} -> 学号 {}", id, inviteeStudentNo);
 
             return ApiResponse.success("邀请已发送", invitation);
         } catch (BusinessException e) {
@@ -567,9 +582,9 @@ public class TeamController {
 
     /**
      * 搜索团队
-     * 根据团队名称搜索团队
+     * 根据团队名称、团队编号、队长姓名或赛道名称模糊搜索团队
      *
-     * @param keyword 搜索关键词（团队名称）
+     * @param keyword 搜索关键词（团队名称/编号/队长姓名/赛道名称）
      * @return API响应（包含团队列表）
      */
     @Operation(summary ="搜索团队")
@@ -578,20 +593,8 @@ public class TeamController {
     public ApiResponse<List<Team>> searchTeams(
             @Parameter(description ="搜索关键词") @RequestParam String keyword) {
 
-        QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
-
-        // 添加搜索关键词条件
-        if (keyword != null && !keyword.isEmpty()) {
-            queryWrapper.like("team_name", keyword);
-        }
-
-        // 只查询组建中的团队
-        queryWrapper.eq("status", "FORMING");
-
-        // 按创建时间降序排序
-        queryWrapper.orderByDesc("create_time");
-
-        List<Team> teams = teamService.list(queryWrapper);
+        // 使用模糊搜索方法（搜索团队名称、团队编号、队长姓名、队长学号、赛道名称）
+        List<Team> teams = teamService.searchTeamsFuzzy(keyword);
 
         return ApiResponse.success(teams);
     }

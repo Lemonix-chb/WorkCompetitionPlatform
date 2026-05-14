@@ -95,7 +95,7 @@ export async function downloadAttachment(attachment) {
 export async function fetchWorkAttachments(workId) {
   try {
     const data = await get(`/upload/work/${workId}`)
-    return data.data || []
+    return data || []
   } catch (error) {
     console.error('获取附件列表失败', error)
     return []

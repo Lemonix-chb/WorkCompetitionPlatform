@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.ReviewResultMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="ReviewResultMap" type="com.example.workcompetitionplatform.entity.ReviewResult">
+        <id column="id" property="id"/>
+        <result column="team_id" property="teamId"/>
+        <result column="submission_id" property="submissionId"/>
+        <result column="ai_score" property="aiScore"/>
+        <result column="ai_weight" property="aiWeight"/>
+        <result column="judge_avg_score" property="judgeAvgScore"/>
+        <result column="judge_weight" property="judgeWeight"/>
+        <result column="final_score" property="finalScore"/>
+        <result column="award_level" property="awardLevel"/>
+        <result column="rank_in_track" property="rankInTrack"/>
+        <result column="final_comment" property="finalComment"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据提交ID查询评审结果 -->
+    <select id="selectBySubmissionId" resultMap="ReviewResultMap">
+        SELECT *
+        FROM review_result
+        WHERE submission_id = #{submissionId}
+        LIMIT 1
+    </select>
+
+    <!-- 根据赛道ID查询评审结果列表 -->
+    <select id="selectByCompetitionTrackId" resultMap="ReviewResultMap">
+        SELECT rr.*
+        FROM review_result rr
+        INNER JOIN submission s ON rr.submission_id = s.id
+        INNER JOIN work w ON s.work_id = w.id
+        WHERE w.track_id = #{competitionTrackId}
+        ORDER BY rr.final_score DESC
+    </select>
+
+    <!-- 根据奖项等级查询评审结果列表 -->
+    <select id="selectByAwardLevel" resultMap="ReviewResultMap">
+        SELECT *
+        FROM review_result
+        WHERE award_level = #{awardLevel}
+        ORDER BY final_score DESC
+    </select>
+
+    <!-- 根据赛事ID查询评审结果列表 -->
+    <select id="selectByCompetitionId" resultMap="ReviewResultMap">
+        SELECT rr.*,
+               t.team_name as teamName,
+               t.team_code as teamCode,
+               s.submission_code as submissionCode,
+               w.work_name as workName,
+               ct.id as competitionTrackId,
+               ct.track_name as trackName
+        FROM review_result rr
+        INNER JOIN submission s ON rr.submission_id = s.id
+        INNER JOIN work w ON s.work_id = w.id
+        INNER JOIN team t ON rr.team_id = t.id
+        INNER JOIN competition_track ct ON w.track_id = ct.id
+        WHERE ct.competition_id = #{competitionId}
+        ORDER BY rr.final_score DESC
+    </select>
+
+    <!-- 根据赛道ID查询获奖团队排名列表 -->
+    <select id="selectAwardedTeamsByTrackId" resultMap="ReviewResultMap">
+        SELECT rr.*,
+               t.team_name as teamName,
+               t.team_code as teamCode,
+               s.submission_code as submissionCode,
+               w.work_name as workName
+        FROM review_result rr
+        INNER JOIN submission s ON rr.submission_id = s.id
+        INNER JOIN work w ON s.work_id = w.id
+        INNER JOIN team t ON rr.team_id = t.id
+        WHERE w.track_id = #{competitionTrackId}
+          AND rr.award_level IS NOT NULL
+        ORDER BY rr.final_score DESC
+    </select>
+
+</mapper>

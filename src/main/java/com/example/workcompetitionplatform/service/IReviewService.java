@@ -5,6 +5,8 @@ import com.example.workcompetitionplatform.entity.AIReviewReport;
 import com.example.workcompetitionplatform.entity.AIReviewDetail;
 import com.example.workcompetitionplatform.entity.JudgeReview;
 import com.example.workcompetitionplatform.entity.ReviewResult;
+import com.example.workcompetitionplatform.entity.Submission;
+import com.example.workcompetitionplatform.dto.AIReviewDetailDTO;
 
 import java.util.List;
 
@@ -33,6 +35,23 @@ public interface IReviewService extends IService<ReviewResult> {
     AIReviewReport getAIReviewReport(Long submissionId);
 
     /**
+     * 根据提交ID查询AI评审详情DTO（包含解析后的亮点、不足、建议列表）
+     *
+     * @param submissionId 提交ID
+     * @return AI评审详情DTO
+     */
+    AIReviewDetailDTO getAIReviewDetailDTO(Long submissionId);
+
+    /**
+     * 根据提交ID查询AI评审详情DTO（复用已查询的submission避免重复查询）
+     *
+     * @param submissionId 提交ID
+     * @param submission 已查询的提交对象
+     * @return AI评审详情DTO
+     */
+    AIReviewDetailDTO getAIReviewDetailDTO(Long submissionId, Submission submission);
+
+    /**
      * 根据AI评审报告ID查询评审详情列表
      *
      * @param aiReviewReportId AI评审报告ID
@@ -58,6 +77,20 @@ public interface IReviewService extends IService<ReviewResult> {
      * @return 是否成功
      */
     boolean submitJudgeReview(Long judgeReviewId, Integer score, String comments);
+
+    /**
+     * 评委提交评审结果（包含三个维度的评分）
+     *
+     * @param judgeReviewId 评委评审ID
+     * @param innovationScore 创新性得分（0-25）
+     * @param practicalityScore 实用性得分（0-25）
+     * @param userExperienceScore 用户体验得分（0-25）
+     * @param overallScore 综合得分
+     * @param comments 评审意见
+     * @return 是否成功
+     */
+    boolean submitJudgeReviewWithDimensions(Long judgeReviewId, Integer innovationScore,
+        Integer practicalityScore, Integer userExperienceScore, Integer overallScore, String comments);
 
     /**
      * 根据提交ID查询评委评审列表
@@ -182,4 +215,13 @@ public interface IReviewService extends IService<ReviewResult> {
      * @return 分配统计信息字符串
      */
     String autoAssignJudges(Long competitionId, int judgesPerSubmission);
+
+    /**
+     * 查询提交作品评审状态汇总
+     * 用于管理员查看所有提交作品的评审进度（包含已评和未评）
+     *
+     * @param competitionId 赛事ID
+     * @return 提交作品评审状态汇总列表
+     */
+    List<com.example.workcompetitionplatform.dto.SubmissionReviewSummaryDTO> listSubmissionReviewSummary(Long competitionId);
 }

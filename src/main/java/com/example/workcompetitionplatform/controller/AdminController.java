@@ -8,7 +8,6 @@ import com.example.workcompetitionplatform.dto.SystemStatsDTO;
 import com.example.workcompetitionplatform.entity.Competition;
 import com.example.workcompetitionplatform.entity.JudgeReview;
 import com.example.workcompetitionplatform.entity.Team;
-import com.example.workcompetitionplatform.entity.CompetitionTrack;
 import com.example.workcompetitionplatform.entity.Submission;
 import com.example.workcompetitionplatform.entity.UserRole;
 import com.example.workcompetitionplatform.entity.Work;
@@ -161,7 +160,7 @@ public class AdminController {
             videoWrapper.eq(Work::getWorkType, Work.WorkType.VIDEO);
             stats.setVideoWorks(workMapper.selectCount(videoWrapper).intValue());
 
-            // 7. AI审核统计
+            // 7. AI评审统计
             LambdaQueryWrapper<Submission> aiValidWrapper = new LambdaQueryWrapper<>();
             aiValidWrapper.eq(Submission::getStatus, Submission.SubmissionStatus.VALID);
             stats.setAiValidCount(submissionMapper.selectCount(aiValidWrapper).intValue());

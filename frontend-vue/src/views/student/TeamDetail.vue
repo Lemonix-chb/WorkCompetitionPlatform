@@ -49,26 +49,44 @@
 
         <!-- Team Actions (仅队长可见) -->
         <div v-if="isLeader" class="team-actions flex gap-md">
+          <!-- 邀请成员按钮（组建中状态且未满员） -->
           <button
-            class="btn-primary"
+            class="action-btn-primary"
             @click="showInviteDialog"
-            v-if="team.currentMemberCount < team.maxMemberCount"
+            v-if="team.status === 'FORMING' && team.currentMemberCount < team.maxMemberCount"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="8" r="5" stroke="currentColor" stroke-width="2"/>
-              <path d="M4 17C4 14 7 12 10 12C13 12 16 14 16 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M16 8L19 8M19 8L19 5M19 8L19 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M3 13C3 10.5 5.5 8.5 8 8.5C10.5 8.5 13 10.5 13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M13 6L15 6M15 6L15 4M15 6L15 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
             邀请成员
           </button>
+
+          <!-- 邀请成员禁用提示（已锁定或已满员） -->
           <button
-            class="btn-secondary"
+            class="action-btn-disabled"
+            disabled
+            v-if="team.status !== 'FORMING' || team.currentMemberCount >= team.maxMemberCount"
+            :title="getInviteDisabledReason()"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M3 13C3 10.5 5.5 8.5 8 8.5C10.5 8.5 13 10.5 13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>无法邀请</span>
+            <span class="disabled-reason">{{ getInviteDisabledReasonShort() }}</span>
+          </button>
+
+          <!-- 确认团队按钮（组建中状态） -->
+          <button
+            class="action-btn-secondary"
             @click="confirmTeam"
             v-if="team.status === 'FORMING'"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
-              <path d="M7 10L9 12L13 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M6 8L7 9L10 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             确认团队
           </button>
@@ -214,13 +232,7 @@ onMounted(async () => {
 const fetchTeamDetail = async () => {
   try {
     const data = await get(`/teams/${teamId}`)
-
-    if (data.code === 200) {
-      team.value = data.data
-    } else {
-      showError(data.message || '获取团队信息失败')
-      router.push('/student/teams')
-    }
+    team.value = data
   } catch (error) {
     showError('获取团队信息失败')
     router.push('/student/teams')
@@ -230,12 +242,7 @@ const fetchTeamDetail = async () => {
 const fetchTeamMembers = async () => {
   try {
     const data = await get(`/teams/${teamId}/members`)
-
-    if (data.code === 200) {
-      members.value = data.data || []
-    } else {
-      showError(data.message || '获取团队成员失败')
-    }
+    members.value = data || []
   } catch (error) {
     showError('获取团队成员失败')
   }
@@ -258,15 +265,11 @@ const handleInviteMember = async () => {
       invitedUserId: inviteForm.value.invitedUserId
     })
 
-    const data = await post(`/teams/${teamId}/invite?${params.toString()}`)
+    await post(`/teams/${teamId}/invite?${params.toString()}`)
 
-    if (data.code === 200) {
-      showSuccess('邀请已发送')
-      showInviteMemberDialog.value = false
-      inviteForm.value = { invitedUserId: '', invitedStudentNo: '' }
-    } else {
-      showError(data.message || '邀请失败')
-    }
+    showSuccess('邀请已发送')
+    showInviteMemberDialog.value = false
+    inviteForm.value = { invitedUserId: '', invitedStudentNo: '' }
   } catch (error) {
     showError('邀请失败，请检查网络连接')
   } finally {
@@ -278,15 +281,11 @@ const removeMember = async (member) => {
   try {
     await showConfirm(`确定要移除成员 ${member.realName} 吗？`, '移除成员')
 
-    const data = await del(`/teams/${teamId}/members/${member.userId}`)
+    await del(`/teams/${teamId}/members/${member.userId}`)
 
-    if (data.code === 200) {
-      showSuccess('成员已移除')
-      await fetchTeamMembers()
-      await fetchTeamDetail()
-    } else {
-      showError(data.message || '移除失败')
-    }
+    showSuccess('成员已移除')
+    await fetchTeamMembers()
+    await fetchTeamDetail()
   } catch (error) {
     if (error !== 'cancel') {
       showError('移除失败')
@@ -298,14 +297,10 @@ const confirmTeam = async () => {
   try {
     await showConfirm('确认团队后，团队状态将变为已确认。确定要确认团队吗？', '确认团队')
 
-    const data = await post(`/teams/${teamId}/confirm`)
+    await post(`/teams/${teamId}/confirm`)
 
-    if (data.code === 200) {
-      showSuccess('团队已确认')
-      await fetchTeamDetail()
-    } else {
-      showError(data.message || '确认失败')
-    }
+    showSuccess('团队已确认')
+    await fetchTeamDetail()
   } catch (error) {
     if (error !== 'cancel') {
       showError('确认失败')
@@ -317,14 +312,10 @@ const quitTeam = async () => {
   try {
     await showConfirm('退出团队后，您将不再是团队成员。确定要退出吗？', '退出团队')
 
-    const data = await post(`/teams/${teamId}/quit`)
+    await post(`/teams/${teamId}/quit`)
 
-    if (data.code === 200) {
-      showSuccess('已退出团队')
-      router.push('/student/teams')
-    } else {
-      showError(data.message || '退出失败')
-    }
+    showSuccess('已退出团队')
+    router.push('/student/teams')
   } catch (error) {
     if (error !== 'cancel') {
       showError('退出失败')
@@ -344,14 +335,10 @@ const dissolveTeam = async () => {
       }
     )
 
-    const data = await del(`/teams/${teamId}`)
+    await del(`/teams/${teamId}`)
 
-    if (data.code === 200) {
-      showSuccess('团队已解散')
-      router.push('/student/teams')
-    } else {
-      showError(data.message || '解散失败')
-    }
+    showSuccess('团队已解散')
+    router.push('/student/teams')
   } catch (error) {
     if (error !== 'cancel') {
       showError('解散失败')
@@ -384,6 +371,26 @@ const getStatusText = (status) => {
     AWARDED: '已获奖'
   }
   return texts[status] || status
+}
+
+const getInviteDisabledReason = () => {
+  if (team.value.status !== 'FORMING') {
+    return '团队已确认锁定，无法邀请新成员'
+  }
+  if (team.value.currentMemberCount >= team.value.maxMemberCount) {
+    return '团队成员已满，无法邀请新成员'
+  }
+  return '无法邀请成员'
+}
+
+const getInviteDisabledReasonShort = () => {
+  if (team.value.status !== 'FORMING') {
+    return '(已锁定)'
+  }
+  if (team.value.currentMemberCount >= team.value.maxMemberCount) {
+    return '(已满员)'
+  }
+  return ''
 }
 
 const formatDate = (dateStr) => {
@@ -447,6 +454,7 @@ const formatDate = (dateStr) => {
 
 .team-actions {
   margin-top: var(--spacing-lg);
+  gap: var(--spacing-sm) !important;
 }
 
 .team-members-section {
@@ -547,5 +555,81 @@ const formatDate = (dateStr) => {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Apple-style Action Buttons - 与Teams.vue团队卡片按钮保持一致 */
+.action-btn-primary {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0071e3 0%, #0077ed 100%);
+  color: white;
+  border: none;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.2);
+  white-space: nowrap;
+}
+
+.action-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+}
+
+.action-btn-secondary {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(0, 113, 227, 0.08);
+  color: #0071e3;
+  border: 1px solid rgba(0, 113, 227, 0.2);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.action-btn-secondary:hover {
+  background: rgba(0, 113, 227, 0.12);
+  border-color: rgba(0, 113, 227, 0.3);
+  transform: translateY(-2px);
+}
+
+.action-btn-disabled {
+  flex: 1;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(142, 142, 147, 0.15);
+  background: rgba(142, 142, 147, 0.06);
+  color: #86868b;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: not-allowed;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0.6;
+  transition: none;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.disabled-reason {
+  font-size: 10px;
+  color: rgba(142, 142, 147, 0.8);
+  font-weight: 400;
+  margin-left: 6px;
 }
 </style>

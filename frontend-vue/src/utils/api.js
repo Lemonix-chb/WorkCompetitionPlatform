@@ -41,7 +41,7 @@ api.interceptors.response.use(
 
     // 项目约定的响应格式：{ code: 200, message: '', data: ... }
     if (data.code === 200) {
-      return data
+      return data.data  // 返回内部数据，而不是完整响应对象
     }
 
     // 业务错误
@@ -136,20 +136,6 @@ export const put = (url, data = {}) => {
  */
 export const del = (url) => {
   return api.delete(url)
-}
-
-/**
- * POST 表单数据（application/x-www-form-urlencoded）
- *
- * @param {string} url - 请求路径
- * @param {Object} params - 表单参数
- * @returns {Promise<Object>} 响应数据
- */
-export const postForm = (url, params = {}) => {
-  return api.post(url, null, {
-    params,
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  })
 }
 
 /**

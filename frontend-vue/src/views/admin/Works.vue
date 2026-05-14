@@ -348,9 +348,7 @@ const fetchTeams = async () => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await response.json()
-    if (data.code === 200) {
-      teams.value = data.data || []
-    }
+    teams.value = data.data || []
   } catch (error) {
     ElMessage.error('获取团队列表失败')
   }
@@ -363,18 +361,14 @@ const fetchCompetitions = async () => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await response.json()
-    if (data.code === 200) {
-      competitions.value = data.data.records || []
-      // Fetch tracks for all competitions
-      for (const comp of competitions.value) {
-        const tracksResponse = await fetch(`/api/competitions/${comp.id}/tracks`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        const tracksData = await tracksResponse.json()
-        if (tracksData.code === 200) {
-          allTracks.value.push(...(tracksData.data || []))
-        }
-      }
+    competitions.value = data.data.records || []
+    // Fetch tracks for all competitions
+    for (const comp of competitions.value) {
+      const tracksResponse = await fetch(`/api/competitions/${comp.id}/tracks`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const tracksData = await tracksResponse.json()
+      allTracks.value.push(...(tracksData.data || []))
     }
   } catch (error) {
     ElMessage.error('获取赛事列表失败')
@@ -389,9 +383,7 @@ const fetchJudges = async () => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await response.json()
-    if (data.code === 200) {
-      judges.value = data.data.records || []
-    }
+    judges.value = data.data.records || []
   } catch (error) {
     ElMessage.error('获取评委列表失败')
   }
@@ -413,24 +405,20 @@ const fetchWorks = async () => {
     })
     const data = await response.json()
 
-    if (data.code === 200) {
-      let result = data.data || []
+    let result = data.data || []
 
-      // 如果选择了赛道，则按赛道过滤
-      if (filters.trackId) {
-        result = result.filter(w => w.trackId === filters.trackId)
-      }
-
-      // 如果选择了状态，则按状态过滤
-      if (filters.status) {
-        result = result.filter(w => w.developmentStatus === filters.status)
-      }
-
-      works.value = result
-      pagination.total = result.length
-    } else {
-      ElMessage.error(data.message || '获取作品列表失败')
+    // 如果选择了赛道，则按赛道过滤
+    if (filters.trackId) {
+      result = result.filter(w => w.trackId === filters.trackId)
     }
+
+    // 如果选择了状态，则按状态过滤
+    if (filters.status) {
+      result = result.filter(w => w.developmentStatus === filters.status)
+    }
+
+    works.value = result
+    pagination.total = result.length
   } catch (error) {
     ElMessage.error('获取作品列表失败')
   } finally {
@@ -470,13 +458,9 @@ const performAIReview = async (work) => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
 
-    const data = await response.json()
-    if (data.code === 200) {
-      ElMessage.success('AI初审已执行')
-      await fetchWorks()
-    } else {
-      ElMessage.error(data.message || 'AI初审失败')
-    }
+    await response.json()
+    ElMessage.success('AI初审已执行')
+    await fetchWorks()
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('AI初审失败')
@@ -514,14 +498,10 @@ const submitAssign = async () => {
       })
     })
 
-    const data = await response.json()
-    if (data.code === 200) {
-      ElMessage.success('评审任务已分配')
-      showAssignDialog.value = false
-      await fetchWorks()
-    } else {
-      ElMessage.error(data.message || '分配失败')
-    }
+    await response.json()
+    ElMessage.success('评审任务已分配')
+    showAssignDialog.value = false
+    await fetchWorks()
   } catch (error) {
     ElMessage.error('分配失败')
   } finally {
@@ -631,12 +611,8 @@ const submitBatchAssign = async () => {
           })
         })
 
-        const data = await response.json()
-        if (data.code === 200) {
-          successCount++
-        } else {
-          failCount++
-        }
+        await response.json()
+        successCount++
       } catch (error) {
         failCount++
       }
@@ -662,7 +638,7 @@ const submitBatchAssign = async () => {
 const autoAssign = async () => {
   try {
     await ElMessageBox.confirm(
-      '系统将自动将所有已提交的作品平均分配给所有评委，每个作品分配2位评委。是否继续？',
+      '系统将自动将所有已提交的作品平均分配给所有评委，每个作品分配1位评委。是否继续？',
       '自动分配确认',
       {
         confirmButtonText: '确定',
@@ -676,7 +652,7 @@ const autoAssign = async () => {
 
     const params = new URLSearchParams({
       competitionId: filters.competitionId || '',
-      judgesPerSubmission: '2'
+      judgesPerSubmission: '1'
     })
 
     const response = await fetch(`/api/reviews/auto-assign?${params.toString()}`, {
@@ -686,16 +662,12 @@ const autoAssign = async () => {
 
     const data = await response.json()
 
-    if (data.code === 200) {
-      ElMessage.success({
-        message: data.data,
-        duration: 5000,
-        showClose: true
-      })
-      await fetchWorks()
-    } else {
-      ElMessage.error(data.message || '自动分配失败')
-    }
+    ElMessage.success({
+      message: data.data,
+      duration: 5000,
+      showClose: true
+    })
+    await fetchWorks()
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('自动分配失败')

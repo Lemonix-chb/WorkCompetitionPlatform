@@ -48,4 +48,12 @@ public interface TeamMapper extends BaseMapper<Team> {
      * @return 团队列表
      */
     List<Team> selectByStatus(@Param("status") Team.TeamStatus status);
+
+    /**
+     * 模糊搜索团队（支持团队名称、团队编号、队长姓名、赛道名称）
+     *
+     * @param keyword 搜索关键词
+     * @return 团队列表（包含队长和赛道信息）
+     */
+    List<Team> searchTeamsFuzzy(@Param("keyword") String keyword);
 }

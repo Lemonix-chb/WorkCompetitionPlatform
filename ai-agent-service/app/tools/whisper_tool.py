@@ -209,14 +209,19 @@ class WhisperTool(BaseTool):
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=60
+                encoding='utf-8',
+                errors='replace',  # 替换无法解码的字符，避免UnicodeDecodeError
+                timeout=60,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
 
             if result.returncode == 0 and os.path.exists(audio_path):
                 logger.info(f"音频提取成功：{audio_path}")
                 return audio_path
             else:
-                logger.error(f"音频提取失败：{result.stderr}")
+                # 检查stderr是否有内容
+                error_msg = result.stderr if result.stderr else '音频提取失败（无错误信息）'
+                logger.error(f"音频提取失败：{error_msg}")
                 return None
 
         except subprocess.CalledProcessError as e:

@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * 异步任务线程池配置
- * 用于 AI 审核等耗时任务的异步执行
+ * 用于 AI 评审等耗时任务的异步执行
  *
  * @author 陈海波
  * @since 2026-04-20
@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class AsyncConfig {
 
     /**
-     * AI 审核线程池
+     * AI 评审线程池
      * 限制并发数以控制 DeepSeek API 调用频率
      *
      * @return 线程池执行器
@@ -29,7 +29,7 @@ public class AsyncConfig {
     public Executor aiReviewExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
-        // 核心线程数：同时处理 2 个 AI 审核
+        // 核心线程数：同时处理 2 个 AI 评审
         executor.setCorePoolSize(2);
 
         // 最大线程数：高峰期最多 5 个并发
@@ -49,6 +49,16 @@ public class AsyncConfig {
         executor.setAwaitTerminationSeconds(60);
 
         executor.initialize();
+
+        // 添加初始化日志
+        System.out.println("========================================");
+        System.out.println("[AsyncConfig] AI评审线程池已初始化");
+        System.out.println("  - 核心线程数: " + executor.getCorePoolSize());
+        System.out.println("  - 最大线程数: " + executor.getMaxPoolSize());
+        System.out.println("  - 队列容量: " + executor.getQueueCapacity());
+        System.out.println("  - 线程前缀: " + executor.getThreadNamePrefix());
+        System.out.println("========================================");
+
         return executor;
     }
 }

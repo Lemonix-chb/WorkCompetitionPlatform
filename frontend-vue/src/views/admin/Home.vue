@@ -234,7 +234,7 @@
             </div>
             <div class="action-content">
               <h3 class="card-title accent-text">作品管理</h3>
-              <p class="caption">审核提交作品、管理文件</p>
+              <p class="caption">评审提交作品、管理文件</p>
               <div class="action-meta">
                 <span class="badge badge-awarded">{{ stats.totalWorks || 0 }} 个作品</span>
               </div>
@@ -386,7 +386,7 @@
 
           <!-- AI Review Pass Rate Chart -->
           <div class="chart-card card">
-            <h3 class="chart-title">🎯 AI审核通过率</h3>
+            <h3 class="chart-title">🎯 AI评审通过率</h3>
             <div ref="gaugeChartRef" class="chart-container"></div>
           </div>
         </div>
@@ -676,7 +676,7 @@ const initCharts = () => {
 
       const gaugeOption = {
         series: [{
-          name: 'AI审核通过率',
+          name: 'AI评审通过率',
           type: 'gauge',
           detail: { formatter: '{value}%' },
           data: [{

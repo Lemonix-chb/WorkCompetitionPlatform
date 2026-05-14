@@ -119,9 +119,7 @@ const handleUpdate = async () => {
 const fetchProfile = async () => {
   try {
     const data = await get('/user/profile')
-    if (data.code === 200) {
-      profile.value = data.data
-    }
+    profile.value = data
   } catch (error) {
     console.error('获取个人信息失败', error)
   }

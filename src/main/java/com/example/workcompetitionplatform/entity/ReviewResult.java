@@ -104,9 +104,10 @@ public class ReviewResult {
      * 奖项等级枚举
      */
     public enum AwardLevel {
-        FIRST,   // 一等奖
-        SECOND,  // 二等奖
-        THIRD,   // 三等奖
-        NONE     // 无奖项
+        FIRST,      // 一等奖
+        SECOND,     // 二等奖
+        THIRD,      // 三等奖
+        EXCELLENCE, // 优秀奖
+        NONE        // 无奖项
     }
 }

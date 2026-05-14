@@ -51,7 +51,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         // 检查用户状态
         if (user.getStatus() != User.UserStatus.ACTIVE) {
-            throw new RuntimeException("账号已被禁用或待审核");
+            throw new RuntimeException("账号已被禁用或待评审");
         }
 
         return user;
@@ -84,7 +84,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         user.setCollege(registerRequest.getCollege());
         user.setMajor(registerRequest.getMajor());
         user.setStudentNo(registerRequest.getStudentNo());
-        user.setStatus(User.UserStatus.PENDING); // 默认待审核状态
+        user.setStatus(User.UserStatus.PENDING); // 默认待评审状态
 
         // 保存用户
         save(user);

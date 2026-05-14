@@ -1,6 +1,7 @@
 package com.example.workcompetitionplatform.controller;
 
 import com.example.workcompetitionplatform.dto.ApiResponse;
+import com.example.workcompetitionplatform.dto.SubmissionReviewSummaryDTO;
 import com.example.workcompetitionplatform.entity.AIReviewReport;
 import com.example.workcompetitionplatform.entity.JudgeReview;
 import com.example.workcompetitionplatform.entity.ReviewResult;
@@ -102,10 +103,13 @@ public class ReviewController {
 
     /**
      * 评委评分
-     * 评委提交评审结果
+     * 评委提交评审结果（包含三个维度的评分）
      *
      * @param judgeReviewId 评委评审ID
-     * @param score 评审分数
+     * @param innovationScore 创新性得分（0-25）
+     * @param practicalityScore 实用性得分（0-25）
+     * @param userExperienceScore 用户体验得分（0-25）
+     * @param overallScore 综合得分（可选，若不提供则自动计算）
      * @param comments 评审意见
      * @return API响应
      */
@@ -114,18 +118,28 @@ public class ReviewController {
     @PreAuthorize("hasRole('JUDGE')")
     public ApiResponse<Void> submitJudgeReview(
             @Parameter(description ="评委评审ID") @RequestParam Long judgeReviewId,
-            @Parameter(description ="评审分数") @RequestParam Integer score,
+            @Parameter(description ="创新性得分（0-25）") @RequestParam Integer innovationScore,
+            @Parameter(description ="实用性得分（0-25）") @RequestParam Integer practicalityScore,
+            @Parameter(description ="用户体验得分（0-25）") @RequestParam Integer userExperienceScore,
+            @Parameter(description ="综合得分（可选）") @RequestParam(required = false) Integer overallScore,
             @Parameter(description ="评审意见") @RequestParam(required = false) String comments) {
 
         try {
-            // 执行评委评审
-            boolean success = reviewService.submitJudgeReview(judgeReviewId, score, comments);
+            // 如果未提供总分，自动计算
+            if (overallScore == null) {
+                overallScore = innovationScore + practicalityScore + userExperienceScore;
+            }
+
+            // 执行评委评审（包含三个维度）
+            boolean success = reviewService.submitJudgeReviewWithDimensions(
+                judgeReviewId, innovationScore, practicalityScore, userExperienceScore, overallScore, comments);
 
             if (!success) {
                 return ApiResponse.error("评委评分失败");
             }
 
-            log.info("评委评分成功：{}", judgeReviewId);
+            log.info("评委评分成功：judgeReviewId={}, 创新={}, 实用={}, 体验={}, 总分={}",
+                judgeReviewId, innovationScore, practicalityScore, userExperienceScore, overallScore);
 
             return ApiResponse.success("评分已提交");
         } catch (BusinessException e) {
@@ -401,5 +415,24 @@ public class ReviewController {
             log.error("自动分配失败", e);
             return ApiResponse.error(e.getMessage());
         }
+    }
+
+    /**
+     * 查询提交作品评审状态汇总
+     * 管理员查看所有提交作品的评审进度和状态（包含已评和未评）
+     *
+     * @param competitionId 赛事ID（可选，null表示查询所有赛事）
+     * @return API响应（包含评审状态汇总列表）
+     */
+    @Operation(summary = "查询提交作品评审状态汇总")
+    @GetMapping("/reviews/submission-summary/{competitionId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<SubmissionReviewSummaryDTO>> listSubmissionReviewSummary(
+            @Parameter(description = "赛事ID（可选，0表示所有赛事）") @PathVariable Long competitionId) {
+        // 如果传入0，视为查询所有赛事
+        Long effectiveCompetitionId = (competitionId != null && competitionId == 0) ? null : competitionId;
+        List<SubmissionReviewSummaryDTO> summaryList =
+            reviewService.listSubmissionReviewSummary(effectiveCompetitionId);
+        return ApiResponse.success(summaryList);
     }
 }

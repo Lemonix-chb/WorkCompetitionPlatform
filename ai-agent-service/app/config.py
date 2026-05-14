@@ -10,10 +10,16 @@ class Settings(BaseSettings):
     # DeepSeek API Configuration
     deepseek_api_key: str = Field(default="", description="DeepSeek API密钥，从环境变量DEEPSEEK_API_KEY加载")
     deepseek_api_url: str = "https://api.deepseek.com/v1/chat/completions"
-    deepseek_model: str = "deepseek-chat"
+    deepseek_model: str = "deepseek-v4-pro"
 
     # Spring Boot Callback URL
     spring_boot_api_url: str = "http://localhost:8080/api"
+
+    # FFmpeg Configuration (for video analysis)
+    ffmpeg_path: Optional[str] = Field(
+        default=None,
+        description="FFmpeg bin目录路径，从环境变量FFMPEG_PATH加载。如果未设置，将尝试从系统PATH查找"
+    )
 
     # Docker Tools Configuration
     jplag_docker_image: str = "jplag/jplag:latest"

@@ -1,5 +1,5 @@
 # Professional Agents Package
-# 专业Agent目录：包含代码、PPT、视频审核专家Agent
+# 专业Agent目录：包含代码、PPT、视频评审专家Agent
 
 # 已实现
 from .video_analyzer_agent import VideoAnalyzerAgent, VideoReviewOutput

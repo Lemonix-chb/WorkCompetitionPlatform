@@ -214,7 +214,7 @@ public class UserController {
 
     /**
      * 更新用户状态
-     * 管理员可以更新用户状态（审核、激活、禁用）
+     * 管理员可以更新用户状态（评审、激活、禁用）
      *
      * @param id 用户ID
      * @param status 用户状态
@@ -273,12 +273,12 @@ public class UserController {
     }
 
     /**
-     * 查询待审核用户列表
-     * 管理员查询所有待审核的用户
+     * 查询待评审用户列表
+     * 管理员查询所有待评审的用户
      *
-     * @return API响应（包含待审核用户列表）
+     * @return API响应（包含待评审用户列表）
      */
-    @Operation(summary = "查询待审核用户列表")
+    @Operation(summary = "查询待评审用户列表")
     @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<User>> listPendingUsers() {

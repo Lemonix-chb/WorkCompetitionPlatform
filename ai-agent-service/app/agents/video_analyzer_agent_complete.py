@@ -1,5 +1,5 @@
 """
-VideoAnalyzerAgent完整实现 - 集成所有视频审核工具
+VideoAnalyzerAgent完整实现 - 集成所有视频评审工具
 
 完整工具链集成：
 1. FFmpegTool：元数据提取 + 硬性要求合规性检查
@@ -12,16 +12,16 @@ DeepSeek LLM评审推理：
 - 官方评分维度：故事性25 + 视觉效果25 + 导演技巧25 + 原创性25
 - 结构化输出保证评分一致性
 
-作者：AI Agent架构重构项目
-更新时间：2026-05-03
 """
 
 import os
+import json
 import logging
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
+from app.utils.llm_utils import extract_json_from_llm_output
 
 # 导入所有工具
 from ..tools.ffmpeg_tool import FFmpegTool
@@ -43,6 +43,7 @@ class VideoReviewOutput(BaseModel):
     visual_effect_score: float = Field(description="视觉效果评分（0-25分）", ge=0, le=25)
     director_skill_score: float = Field(description="导演技巧评分（0-25分）", ge=0, le=25)
     originality_score: float = Field(description="原创性评分（0-25分）", ge=0, le=25)
+    documentation_score: float = Field(description="文档完整性评分（0-25分）", ge=0, le=25)
 
     # 硬性要求合规性
     compliance_check: Dict[str, Any] = Field(description="硬性要求合规性检查结果")
@@ -123,7 +124,7 @@ class VideoAnalyzerAgent:
         additional_files: Optional[List[str]] = None
     ) -> VideoReviewOutput:
         """
-        完整视频审核流程
+        完整视频评审流程
 
         Args:
             video_path: 视频文件路径
@@ -133,7 +134,7 @@ class VideoAnalyzerAgent:
         Returns:
             VideoReviewOutput: 结构化评审报告
         """
-        logger.info(f"开始完整视频审核：{video_path}")
+        logger.info(f"开始完整视频评审：{video_path}")
 
         # ========== 步骤1：FFmpegTool元数据提取 ==========
         logger.info("步骤1：FFmpegTool元数据提取...")
@@ -224,13 +225,13 @@ class VideoAnalyzerAgent:
         if keyframe_result.get("success"):
             self.keyframe_tool.cleanup()
 
-        logger.info(f"视频审核完成，总分：{review_result.overall_score}")
+        logger.info(f"视频评审完成，总分：{review_result.overall_score}")
 
         return review_result
 
     def _get_system_prompt(self) -> str:
         """系统提示词：定义评审角色和标准"""
-        return """你是一位专业的视频作品评审专家，负责审核大学生计算机设计大赛的数媒动漫与短视频作品。
+        return """你是一位专业的视频作品评审专家，负责评审大学生计算机设计大赛的数媒动漫与短视频作品。
 
 评审标准（根据校教发〔2024〕77号文件）：
 
@@ -254,6 +255,11 @@ class VideoAnalyzerAgent:
    - 创意构思（题材新颖度、表达方式创新）
    - 原创内容（原创素材占比、有无明显抄袭）
    - 个人风格（独特的视觉语言、叙事风格）
+
+5. 文档完整性（25分）：
+   - 说明文档是否存在（README、docx、pdf、txt均可）
+   - 文档内容质量（是否清晰描述作品主题、创作思路、制作团队）
+   - 技术说明完整性（是否有拍摄/制作说明、素材来源说明等）
 
 【硬性要求检查】：
 - 时长：60-180秒
@@ -279,6 +285,7 @@ class VideoAnalyzerAgent:
   "visual_effect_score": 视觉效果评分（0-25）,
   "director_skill_score": 导演技巧评分（0-25）,
   "originality_score": 原创性评分（0-25）,
+  "documentation_score": 文档完整性评分（0-25）,
   "review_summary": "评审总结（200-500字）",
   "strengths": ["亮点1", "亮点2", ...],
   "weaknesses": ["不足1", "不足2", ...],
@@ -343,17 +350,8 @@ class VideoAnalyzerAgent:
         """
         解析LLM输出为结构化评审结果
         """
-        import json
-
         try:
-            # 提取JSON部分
-            json_str = llm_output
-            if "```json" in llm_output:
-                json_str = llm_output.split("```json")[1].split("```")[0].strip()
-            elif "```" in llm_output:
-                json_str = llm_output.split("```")[1].split("```")[0].strip()
-
-            result_dict = json.loads(json_str)
+            result_dict = extract_json_from_llm_output(llm_output)
 
             # 构建VideoReviewOutput对象
             review_output = VideoReviewOutput(
@@ -362,6 +360,7 @@ class VideoAnalyzerAgent:
                 visual_effect_score=result_dict.get("visual_effect_score", 15),
                 director_skill_score=result_dict.get("director_skill_score", 15),
                 originality_score=result_dict.get("originality_score", 15),
+                documentation_score=result_dict.get("documentation_score", 10),
                 compliance_check=compliance_check,
                 review_summary=result_dict.get("review_summary", ""),
                 strengths=result_dict.get("strengths", []),
@@ -382,6 +381,7 @@ class VideoAnalyzerAgent:
                 visual_effect_score=15,
                 director_skill_score=15,
                 originality_score=15,
+                documentation_score=10,
                 compliance_check=compliance_check,
                 review_summary="评审结果解析失败，请重新评审",
                 strengths=["评审解析失败"],

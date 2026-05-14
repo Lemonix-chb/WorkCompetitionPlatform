@@ -7,17 +7,17 @@ logger = logging.getLogger(__name__)
 
 
 class ReviewService:
-    """审核结果编译服务"""
+    """评审结果编译服务"""
 
     def compile_report(self, agent_result: dict) -> AIReviewReport:
         """
         将Agent结果编译为标准报告
 
         Args:
-            agent_result: Agent返回的审核结果
+            agent_result: Agent返回的评审结果
 
         Returns:
-            AIReviewReport: 标准化审核报告
+            AIReviewReport: 标准化评审报告
         """
         logger.info("Compiling AI review report...")
 

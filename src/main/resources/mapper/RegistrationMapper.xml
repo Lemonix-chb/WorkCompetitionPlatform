@@ -49,13 +49,14 @@
         ORDER BY registration_time DESC
     </select>
 
-    <!-- 根据赛事ID和用户ID查询报名记录 -->
+    <!-- 根据赛事ID和用户ID查询报名记录（排除已退赛的） -->
     <select id="selectByCompetitionIdAndUserId" resultMap="RegistrationResultMap">
         SELECT r.*
         FROM registration r
         INNER JOIN team_member tm ON r.team_id = tm.team_id
         WHERE r.competition_id = #{competitionId}
         AND tm.user_id = #{userId}
+        AND r.status != 'CANCELLED'
         LIMIT 1
     </select>
 

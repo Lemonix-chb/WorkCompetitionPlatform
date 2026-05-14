@@ -162,4 +162,13 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     public List<Submission> listAllSubmissions() {
         return baseMapper.selectAllSubmissions();
     }
+
+    @Override
+    public Submission getByWorkId(Long workId) {
+        LambdaQueryWrapper<Submission> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Submission::getWorkId, workId);
+        wrapper.orderByDesc(Submission::getSubmissionTime);
+        wrapper.last("LIMIT 1");
+        return baseMapper.selectOne(wrapper);
+    }
 }

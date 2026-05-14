@@ -28,7 +28,7 @@
           />
 
           <el-select v-model="filters.status" placeholder="用户状态" clearable style="width: 150px">
-            <el-option label="待审核" value="PENDING" />
+            <el-option label="待评审" value="PENDING" />
             <el-option label="已激活" value="ACTIVE" />
             <el-option label="已禁用" value="INACTIVE" />
           </el-select>
@@ -96,7 +96,7 @@
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path d="M2 8L6 12L14 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    审核
+                    评审
                   </button>
                   <button
                     v-if="row.status === 'ACTIVE'"
@@ -426,14 +426,14 @@ const submitAdd = async () => {
 
 const approveStudent = async (student) => {
   try {
-    await showConfirm(`确定要审核通过学生 "${student.realName}" 吗？`, '审核学生')
+    await showConfirm(`确定要评审通过学生 "${student.realName}" 吗？`, '评审学生')
 
     await put(`/users/${student.id}/status?status=ACTIVE`)
-    showSuccess('审核成功')
+    showSuccess('评审成功')
     await fetchStudents()
   } catch (error) {
     if (error !== 'cancel') {
-      showError('审核失败')
+      showError('评审失败')
     }
   }
 }
@@ -486,7 +486,7 @@ const getStatusClass = (status) => {
 
 const getStatusText = (status) => {
   const texts = {
-    PENDING: '待审核',
+    PENDING: '待评审',
     ACTIVE: '已激活',
     INACTIVE: '已禁用'
   }

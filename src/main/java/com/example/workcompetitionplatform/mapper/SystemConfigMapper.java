@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.workcompetitionplatform.entity.SystemConfig;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -40,4 +41,13 @@ public interface SystemConfigMapper extends BaseMapper<SystemConfig> {
      * @return 系统配置列表
      */
     List<SystemConfig> selectByConfigType(@Param("configType") SystemConfig.ConfigType configType);
+
+    /**
+     * 根据配置键直接获取配置值
+     *
+     * @param configKey 配置键
+     * @return 配置值（如果不存在返回null）
+     */
+    @Select("SELECT config_value FROM system_config WHERE config_key = #{configKey} AND deleted = 0")
+    String getConfigValue(@Param("configKey") String configKey);
 }

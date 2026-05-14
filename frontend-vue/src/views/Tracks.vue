@@ -187,81 +187,253 @@ const selectTrack = (track) => {
 <style scoped>
 .tracks-page {
   min-height: 100vh;
+  background: linear-gradient(180deg, #f5f5f7 0%, #ffffff 100%);
 }
 
 .loading-state, .error-state, .empty-state {
-  padding: 64px 0;
+  padding: 80px 0;
+  text-align: center;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(0, 0, 0, 0.48);
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(0, 113, 227, 0.15);
   border-top-color: var(--color-apple-blue);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
+/* Track Card Enhancement */
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-apple-blue), #5ac8fa);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 113, 227, 0.1);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+/* Track Badge */
 .track-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(0, 113, 227, 0.1);
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.08) 0%, rgba(0, 113, 227, 0.04) 100%);
   color: var(--color-apple-blue);
-  padding: 8px 12px;
-  border-radius: var(--radius-pill);
+  padding: 10px 16px;
+  border-radius: 50px;
+  border: 1px solid rgba(0, 113, 227, 0.15);
+  box-shadow: 0 1px 4px rgba(0, 113, 227, 0.1);
 }
 
 .badge-icon {
-  font-size: 18px;
+  font-size: 20px;
+  line-height: 1;
 }
 
 .badge-text {
   font-family: var(--font-text);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: -0.224px;
+  letter-spacing: -0.24px;
 }
 
+/* Track Title */
+.tile-heading {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.56px;
+  color: #1d1d1f;
+  margin-top: 8px;
+}
+
+/* Specs Grid */
 .specs-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 17px;
+  gap: 20px;
+  background: rgba(245, 245, 247, 0.5);
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 8px;
 }
 
 .spec-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.spec-item:hover {
+  border-color: rgba(0, 113, 227, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .spec-item.spec-full {
   grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(245, 245, 247, 0.5) 0%, rgba(255, 255, 255, 0.8) 100%);
 }
 
 .spec-item.spec-highlight {
-  background: rgba(255, 149, 0, 0.1);
-  padding: 8px;
-  border-radius: 5px;
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.06) 0%, rgba(255, 149, 0, 0.02) 100%);
+  border-color: rgba(255, 149, 0, 0.3);
+}
+
+.spec-item .caption:first-child {
+  font-weight: 600;
+  color: #86868b;
+  letter-spacing: -0.32px;
+}
+
+.spec-item .card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.4px;
+}
+
+.spec-item .body-text {
+  font-size: 15px;
+  color: #1d1d1f;
+  font-weight: 500;
+}
+
+/* Track Section */
+.track-section {
+  background: rgba(245, 245, 247, 0.5);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .section-title {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
-  line-height: 1.24;
-  letter-spacing: -0.374px;
-  color: var(--color-near-black);
-  margin-bottom: 8px;
+  line-height: 1.22;
+  letter-spacing: -0.4px;
+  color: #1d1d1f;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: var(--color-apple-blue);
+  border-radius: 2px;
+}
+
+.track-section .caption {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #424245;
+  letter-spacing: -0.24px;
+}
+
+/* Track Footer */
+.track-footer {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.track-footer .btn-primary {
+  background: linear-gradient(135deg, var(--color-apple-blue) 0%, #007aff 100%);
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.3), 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.track-footer .btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.track-footer .btn-primary:hover::before {
+  left: 100%;
+}
+
+.track-footer .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 113, 227, 0.4), 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Grid Layout */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 32px;
 }
 
 @media (max-width: 640px) {
   .specs-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .grid-auto {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .card {
+    padding: 24px;
+    border-radius: 14px;
+  }
+
+  .tile-heading {
+    font-size: 24px;
+    letter-spacing: -0.48px;
+  }
+
+  .track-badge {
+    padding: 8px 14px;
+    gap: 8px;
   }
 }
 </style>

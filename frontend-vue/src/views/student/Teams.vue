@@ -48,7 +48,7 @@
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            创建新团队
+            创建团队
           </button>
         </div>
       </div>
@@ -69,59 +69,134 @@
           <p class="caption">创建团队开始参赛吧</p>
         </div>
 
-        <div v-else class="grid grid-auto">
-          <div v-for="team in teams" :key="team.id" class="team-card card card-hover">
-            <!-- Team Header -->
-            <div class="team-header">
-              <h3 class="card-title">{{ team.teamName }}</h3>
-              <span :class="getTeamStatusClass(team.status)" class="badge">
-                {{ getTeamStatusText(team.status) }}
-              </span>
-            </div>
-
-            <!-- Team Info -->
-            <div class="team-info">
-              <div class="info-row">
-                <span class="info-label caption">赛道</span>
-                <span class="info-value body-text">{{ getTrackName(team) }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label caption">成员</span>
-                <span class="info-value body-text">{{ team.currentMemberCount }} / {{ team.maxMemberCount }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label caption">团队编号</span>
-                <span class="info-value caption">{{ team.teamCode }}</span>
+        <div v-else class="teams-grid">
+          <div v-for="team in teams" :key="team.id" class="team-card">
+            <!-- Card Header: Team Info -->
+            <div class="card-header">
+              <div class="header-content">
+                <h3 class="team-name">{{ team.teamName }}</h3>
+                <div class="team-meta">
+                  <span class="team-code">{{ team.teamCode }}</span>
+                  <span :class="getStatusBadgeClass(team.status)" class="status-badge">
+                    {{ getStatusText(team.status) }}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <!-- Team Actions -->
-            <div class="team-actions flex gap-md">
+            <!-- Competition Section -->
+            <div class="competition-section">
+              <div v-if="team.competitionTrackId" class="competition-card registered">
+                <div class="competition-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L20 7V17L12 22L4 17V7L12 2Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 6L16 8.5V13.5L12 16L8 13.5V8.5L12 6Z" stroke="currentColor" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div class="competition-info">
+                  <div class="competition-label">已报名赛事</div>
+                  <div class="competition-name">{{ getCompetitionName(team) }}</div>
+                  <div class="track-name">{{ getTrackName(team) }}</div>
+                </div>
+              </div>
+              <div v-else class="competition-card unregistered">
+                <div class="competition-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 8V12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="competition-info">
+                  <div class="competition-label">暂未报名</div>
+                  <div class="competition-name">等待赛事报名</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Team Stats -->
+            <div class="stats-section">
+              <div class="stat-row">
+                <div class="stat-item">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="8" r="5" stroke="currentColor" stroke-width="2"/>
+                    <path d="M4 17C4 14 7 12 10 12C13 12 16 14 16 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <div class="stat-text">
+                    <span class="stat-value">{{ team.currentMemberCount }}</span>
+                    <span class="stat-divider">/</span>
+                    <span class="stat-max">{{ team.maxMemberCount }}</span>
+                    <span class="stat-label">成员</span>
+                  </div>
+                </div>
+                <div class="stat-divider-line"></div>
+                <div class="stat-item">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2"/>
+                    <path d="M10 6V10L13 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <div class="stat-text">
+                    <span class="stat-value">{{ formatDate(team.createTime) }}</span>
+                    <span class="stat-label">创建</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="actions-section">
               <!-- 队长操作 -->
-              <button v-if="isTeamLeader(team)" class="btn-primary" @click="manageTeam(team)">管理团队</button>
-              <button v-if="isTeamLeader(team)" class="btn-secondary" @click="showTeamApplications(team)">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
-                  <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                处理申请
-                <span v-if="team.pendingApplicationsCount > 0" class="badge badge-primary ml-sm">{{ team.pendingApplicationsCount }}</span>
-              </button>
-              <button
-                v-if="isTeamLeader(team) && team.currentMemberCount < team.maxMemberCount && team.status === 'FORMING'"
-                class="btn-secondary"
-                @click="openInviteDialog(team)"
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="10" cy="8" r="5" stroke="currentColor" stroke-width="2"/>
-                  <path d="M4 17C4 14 7 12 10 12C13 12 16 14 16 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                  <path d="M16 8L19 8M19 8L19 5M19 8L19 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                邀请成员
-              </button>
+              <template v-if="isTeamLeader(team)">
+                <button class="btn-primary" @click="manageTeam(team)">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 2L12 5V11L8 14L4 11V5L8 2Z" stroke="currentColor" stroke-width="1.5"/>
+                  </svg>
+                  管理团队
+                </button>
+                <button class="btn-secondary" @click="showTeamApplications(team)">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="3" y="3" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M6 6H10M6 8H10M6 10H8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  申请
+                  <span v-if="team.pendingApplicationsCount > 0" class="badge-dot"></span>
+                </button>
+                <button
+                  v-if="team.currentMemberCount < team.maxMemberCount && team.status === 'FORMING'"
+                  class="btn-secondary"
+                  @click="openInviteDialog(team)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M3 13C3 10.5 5.5 8.5 8 8.5C10.5 8.5 13 10.5 13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M13 6L15 6M15 6L15 4M15 6L15 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  邀请
+                </button>
+                <button
+                  v-else
+                  class="btn-disabled"
+                  disabled
+                  :title="getInviteDisabledReason(team)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="6" r="4" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M3 13C3 10.5 5.5 8.5 8 8.5C10.5 8.5 13 10.5 13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  邀请
+                  <span class="disabled-hint">{{ getInviteDisabledReasonShort(team) }}</span>
+                </button>
+              </template>
 
-              <!-- 队员操作 -->
-              <button v-if="!isTeamLeader(team)" class="btn-primary" @click="viewTeam(team)">查看团队</button>
+              <!-- 成员操作 -->
+              <template v-if="!isTeamLeader(team)">
+                <button class="btn-primary" @click="viewTeam(team)">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8 5V8L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  查看详情
+                </button>
+              </template>
             </div>
           </div>
         </div>
@@ -143,47 +218,75 @@
         </div>
 
         <div v-else class="grid grid-auto">
-          <div v-for="invitation in invitations" :key="invitation.id" class="invitation-card card card-flat">
+          <div v-for="invitation in invitations" :key="invitation.id" class="invitation-card card">
             <!-- Invitation Header -->
             <div class="invitation-header">
-              <h3 class="card-title">{{ invitation.teamName || '团队邀请' }}</h3>
-              <span :class="getInvitationStatusClass(invitation.status)" class="badge">
+              <div class="invitation-title-section">
+                <h3 class="invitation-name">{{ invitation.teamName || '团队邀请' }}</h3>
+              </div>
+              <span :class="getInvitationStatusClass(invitation.status)" class="status-badge">
                 {{ getInvitationStatusText(invitation.status) }}
               </span>
             </div>
 
-            <!-- Invitation Info -->
-            <div class="invitation-info">
-              <div class="info-row">
-                <span class="info-label caption">团队名称</span>
-                <span class="info-value body-text">{{ invitation.teamName || '未知团队' }}</span>
+            <!-- Invitation Stats -->
+            <div class="invitation-stats">
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 7V10M10 13V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">邀请人</div>
+                  <div class="stat-value">{{ invitation.inviterName || '未知' }}</div>
+                </div>
               </div>
-              <div class="info-row">
-                <span class="info-label caption">邀请人</span>
-                <span class="info-value body-text">{{ invitation.inviterName || '未知' }} ({{ invitation.inviterNo || '无编号' }})</span>
+
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 6V10L13 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">过期时间</div>
+                  <div class="stat-value">{{ formatDateTime(invitation.expireTime) }}</div>
+                </div>
               </div>
-              <div class="info-row">
-                <span class="info-label caption">过期时间</span>
-                <span class="info-value caption">{{ formatDateTime(invitation.expireTime) }}</span>
+
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-label">状态</div>
+                  <div class="stat-value status-text">{{ getInvitationStatusText(invitation.status) }}</div>
+                </div>
               </div>
             </div>
 
             <!-- Invitation Actions -->
-            <div v-if="invitation.status === 'PENDING'" class="invitation-actions flex gap-md">
-              <button class="btn-primary" @click="acceptInvitation(invitation)">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
-                  <path d="M7 10L9 12L13 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <div v-if="invitation.status === 'PENDING'" class="invitation-actions">
+              <button class="action-btn-primary" @click="acceptInvitation(invitation)">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M6 9L8 11L12 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                接受邀请
+                <span>接受邀请</span>
               </button>
-              <button class="btn-secondary" @click="rejectInvitation(invitation)">
+              <button class="action-btn-secondary" @click="rejectInvitation(invitation)">
                 拒绝
               </button>
             </div>
 
             <!-- Processed Status -->
-            <div v-else class="invitation-processed caption">
+            <div v-else class="invitation-processed">
               {{ invitation.status === 'ACCEPTED' ? '已接受' : '已拒绝' }} · {{ formatDateTime(invitation.processTime) }}
             </div>
           </div>
@@ -195,12 +298,13 @@
         <!-- Search Section -->
         <div class="search-section card card-flat mb-lg">
           <h3 class="section-title mb-md">搜索团队申请加入</h3>
+          <p class="caption mb-md">支持搜索团队名称、团队编号、队长姓名、队长学号或赛道名称</p>
           <div class="search-form flex gap-md">
             <el-input
               v-model="searchTeamKeyword"
-              placeholder="输入团队名称搜索"
+              placeholder="输入关键词搜索（团队名/编号/队长/赛道）"
               clearable
-              style="width: 300px"
+              style="width: 400px"
               @keyup.enter="searchTeams"
             />
             <button class="btn-secondary" @click="searchTeams">
@@ -223,63 +327,92 @@
             搜索结果（找到 {{ searchedTeams.length }} 个团队）
           </h3>
           <div class="grid grid-auto">
-            <div v-for="team in searchedTeams" :key="team.id" class="team-result-card card card-hover">
+            <div v-for="team in searchedTeams" :key="team.id" class="team-card card card-hover">
               <!-- Team Header -->
               <div class="team-header">
-                <h3 class="card-title">{{ team.teamName }}</h3>
-                <span :class="getTeamStatusClass(team.status)" class="badge">
+                <div class="team-title-section">
+                  <h3 class="team-name">{{ team.teamName }}</h3>
+                  <div class="team-code-badge">{{ team.teamCode }}</div>
+                </div>
+                <span :class="getTeamStatusClass(team.status)" class="status-badge">
                   {{ getTeamStatusText(team.status) }}
                 </span>
               </div>
 
-              <!-- Team Brief Info -->
-              <div class="team-brief-info mt-md">
-                <div class="brief-item">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="5" r="3" stroke="#5a7fa8" stroke-width="1.5"/>
-                    <path d="M2 13C2 10 5 8 8 8C11 8 14 10 14 13" stroke="#5a7fa8" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
-                  <span class="body-text">成员 {{ team.currentMemberCount }}/{{ team.maxMemberCount }}</span>
+              <!-- Team Stats Grid -->
+              <div class="team-stats">
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M9 2L16 6V12L9 16L2 12V6L9 2Z" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">赛道</div>
+                    <div class="stat-value">{{ team.trackName || '未知' }}</div>
+                  </div>
                 </div>
-                <div class="brief-item" v-if="team.leaderName">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="8" r="6" stroke="#5a7fa8" stroke-width="1.5"/>
-                    <path d="M8 5V8M8 11V11" stroke="#5a7fa8" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
-                  <span class="body-text">队长：{{ team.leaderName }}</span>
+
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M4 17C4 14 7 12 10 12C13 12 16 14 16 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">成员</div>
+                    <div class="stat-value">{{ team.currentMemberCount }}/{{ team.maxMemberCount }}</div>
+                  </div>
                 </div>
-                <div class="brief-item" v-if="team.teamCode">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <rect x="3" y="3" width="10" height="10" rx="2" stroke="#5a7fa8" stroke-width="1.5"/>
-                    <path d="M5 7H11M5 9H9" stroke="#5a7fa8" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
-                  <span class="caption">团队编号：{{ team.teamCode }}</span>
+
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M10 6.5V10M10 13.5V13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">队长</div>
+                    <div class="stat-value">{{ team.leaderName || '未知' }}</div>
+                  </div>
                 </div>
               </div>
 
               <!-- Apply Action -->
-              <div class="team-actions mt-lg">
+              <div class="team-actions">
                 <button
-                  class="btn-primary"
+                  class="action-btn-primary"
                   @click="applyToTeam(team)"
                   v-if="team.currentMemberCount < team.maxMemberCount && team.status === 'FORMING'"
                 >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="8" r="5" stroke="currentColor" stroke-width="2"/>
-                    <path d="M4 17C4 14 7 12 10 12C13 12 16 14 16 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M16 8L19 8M19 8L19 5M19 8L19 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M4 15C4 12.5 6.5 10.5 9 10.5C11.5 10.5 14 12.5 14 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M14 7L16 7M16 7L16 5M16 7L16 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                   </svg>
-                  申请加入
+                  <span>申请加入</span>
                 </button>
-                <button v-else class="btn-secondary" disabled>
-                  团队已满或已锁定
+                <button
+                  v-else
+                  class="action-btn-secondary action-btn-disabled"
+                  disabled
+                  :title="getApplyDisabledReason(team)"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M6 6L12 12M12 6L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                  <span>无法申请</span>
+                  <span class="disabled-reason">{{ getApplyDisabledReasonShort(team) }}</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
-        <div v-else-if="searchTeamKeyword && searchedTeams.length === 0" class="empty-result card mb-lg">
-          <p class="caption text-center">未找到名称包含 "{{ searchTeamKeyword }}" 的团队</p>
+        <div v-else-if="searchTeamKeyword && searchedTeams.length === 0 && !searchingStudent" class="empty-result card mb-lg">
+          <p class="caption text-center">未找到包含关键词 "{{ searchTeamKeyword }}" 的团队<br/>请尝试其他关键词（团队名/编号/队长姓名/学号/赛道名）</p>
         </div>
 
         <!-- My Applications -->
@@ -289,23 +422,59 @@
             <div v-for="application in myApplications" :key="application.id" class="application-card card">
               <!-- Application Header -->
               <div class="application-header">
-                <h3 class="card-title">{{ application.teamName }}</h3>
-                <span :class="getApplicationStatusClass(application.status)" class="badge">
+                <div class="application-title-section">
+                  <h3 class="application-name">申请记录</h3>
+                </div>
+                <span :class="getApplicationStatusClass(application.status)" class="status-badge">
                   {{ getApplicationStatusText(application.status) }}
                 </span>
               </div>
 
-              <!-- Application Info -->
-              <div class="application-info">
-                <div class="info-row">
-                  <span class="info-label caption">申请时间</span>
-                  <span class="info-value caption">{{ formatDateTime(application.createTime) }}</span>
+              <!-- Application Stats -->
+              <div class="application-stats">
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <rect x="4" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M7 7H13M7 10H13M7 13H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">团队名称</div>
+                    <div class="stat-value">{{ application.teamName }}</div>
+                  </div>
+                </div>
+
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M10 6V10L13 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">申请时间</div>
+                    <div class="stat-value">{{ formatDateTime(application.createTime) }}</div>
+                  </div>
+                </div>
+
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M10 6.5V10M10 13.5V13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-label">状态</div>
+                    <div class="stat-value status-text">{{ getApplicationStatusText(application.status) }}</div>
+                  </div>
                 </div>
               </div>
 
               <!-- Cancel Action -->
               <div v-if="application.status === 'PENDING'" class="application-actions">
-                <button class="btn-secondary" @click="cancelApplication(application)">
+                <button class="action-btn-secondary" @click="cancelApplication(application)">
                   取消申请
                 </button>
               </div>
@@ -340,19 +509,6 @@
               v-model="createTeamForm.teamName"
               placeholder="请输入团队名称"
             />
-          </el-form-item>
-          <el-form-item label="选择赛道" required>
-            <el-select
-              v-model="createTeamForm.competitionTrackId"
-              placeholder="请选择参赛赛道"
-            >
-              <el-option
-                v-for="track in tracks"
-                :key="track.id"
-                :label="track.trackName"
-                :value="track.id"
-              />
-            </el-select>
           </el-form-item>
         </el-form>
         <template #footer>
@@ -533,13 +689,14 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { get, post, del } from '@/utils/api'
 import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
-import { formatDateTime } from '@/utils/dateUtils'
+import { formatDateTime, formatDate } from '@/utils/dateUtils'
 
 const router = useRouter()
 
 const activeTab = ref('myTeams')
 const teams = ref([])
 const tracks = ref([])
+const competitions = ref([])
 const invitations = ref([])
 const myApplications = ref([])
 const searchedTeams = ref([])
@@ -559,8 +716,7 @@ const showInviteMemberDialog = ref(false)
 const showApplicationsDialog = ref(false)
 
 const createTeamForm = ref({
-  teamName: '',
-  competitionTrackId: ''
+  teamName: ''
 })
 
 const loading = ref(false)
@@ -582,6 +738,7 @@ onMounted(async () => {
   await Promise.all([
     fetchTeams(),
     fetchTracks(),
+    fetchCompetitions(),
     fetchInvitations(),
     fetchMyApplications()
   ])
@@ -590,12 +747,7 @@ onMounted(async () => {
 const fetchTeams = async () => {
   try {
     const data = await get('/teams/my')
-
-    if (data.code === 200) {
-      teams.value = data.data || []
-    } else {
-      showError(data.message || '获取团队列表失败')
-    }
+    teams.value = data || []
   } catch (error) {
     showError('获取团队列表失败')
   }
@@ -603,23 +755,40 @@ const fetchTeams = async () => {
 
 const fetchTracks = async () => {
   try {
-    const data = await get('/competitions/1/tracks')
+    // 加载所有比赛的赛道数据
+    const competitionsData = await get('/competitions')
+    const competitionsArray = competitionsData?.records || competitionsData || []
 
-    if (data.code === 200) {
-      tracks.value = data.data || []
+    if (competitionsArray && competitionsArray.length > 0) {
+      // 为每个比赛加载赛道
+      const trackPromises = competitionsArray.map(comp => get(`/competitions/${comp.id}/tracks`))
+      const tracksArrays = await Promise.all(trackPromises)
+      const allTracks = tracksArrays.flat()
+      tracks.value = allTracks
+    } else {
+      // 如果没有比赛数据，尝试加载第一个比赛的赛道
+      const data = await get('/competitions/1/tracks')
+      tracks.value = data || []
     }
   } catch (error) {
     console.error('获取赛道列表失败', error)
   }
 }
 
+const fetchCompetitions = async () => {
+  try {
+    const data = await get('/competitions')
+    const competitionsArray = data?.records || data || []
+    competitions.value = competitionsArray
+  } catch (error) {
+    console.error('获取比赛列表失败', error)
+  }
+}
+
 const fetchInvitations = async () => {
   try {
     const data = await get('/teams/invitations/pending')
-
-    if (data.code === 200) {
-      invitations.value = data.data || []
-    }
+    invitations.value = data || []
   } catch (error) {
     console.error('获取邀请列表失败', error)
   }
@@ -628,17 +797,14 @@ const fetchInvitations = async () => {
 const fetchMyApplications = async () => {
   try {
     const data = await get('/teams/applications/my')
-
-    if (data.code === 200) {
-      myApplications.value = data.data || []
-    }
+    myApplications.value = data || []
   } catch (error) {
     console.error('获取申请列表失败', error)
   }
 }
 
 const showCreateDialog = () => {
-  createTeamForm.value = { teamName: '', competitionTrackId: '' }
+  createTeamForm.value = { teamName: '' }
   showCreateTeamDialog.value = true
 }
 
@@ -647,28 +813,19 @@ const handleCreateTeam = async () => {
     showWarning('请输入团队名称')
     return
   }
-  if (!createTeamForm.value.competitionTrackId) {
-    showWarning('请选择赛道')
-    return
-  }
 
   loading.value = true
 
   try {
     const params = new URLSearchParams({
-      teamName: createTeamForm.value.teamName,
-      competitionTrackId: createTeamForm.value.competitionTrackId
+      teamName: createTeamForm.value.teamName
     })
 
-    const data = await post(`/teams?${params.toString()}`)
+    await post(`/teams?${params.toString()}`)
 
-    if (data.code === 200) {
-      showSuccess('团队创建成功')
-      showCreateTeamDialog.value = false
-      await fetchTeams()
-    } else {
-      showError(data.message || '创建团队失败')
-    }
+    showSuccess('团队创建成功')
+    showCreateTeamDialog.value = false
+    await fetchTeams()
   } catch (error) {
     showError('创建团队失败')
   } finally {
@@ -697,12 +854,7 @@ const showTeamApplications = async (team) => {
 const fetchTeamApplications = async (teamId) => {
   try {
     const data = await get(`/teams/${teamId}/applications/pending`)
-
-    if (data.code === 200) {
-      teamApplications.value = data.data || []
-    } else {
-      showError(data.message || '获取申请列表失败')
-    }
+    teamApplications.value = data || []
   } catch (error) {
     showError('获取申请列表失败')
   }
@@ -715,15 +867,11 @@ const getApplicantName = (application) => {
 
 const acceptApplication = async (application) => {
   try {
-    const data = await post(`/teams/applications/${application.id}/accept`)
+    await post(`/teams/applications/${application.id}/accept`)
 
-    if (data.code === 200) {
-      showSuccess('已接受申请')
-      await fetchTeamApplications(selectedTeam.value.id)
-      await fetchTeams()
-    } else {
-      showError(data.message || '接受申请失败')
-    }
+    showSuccess('已接受申请')
+    await fetchTeamApplications(selectedTeam.value.id)
+    await fetchTeams()
   } catch (error) {
     showError('接受申请失败')
   }
@@ -743,14 +891,10 @@ const rejectApplication = async (application) => {
       responseReason: reason
     })
 
-    const data = await post(`/teams/applications/${application.id}/reject?${params.toString()}`)
+    await post(`/teams/applications/${application.id}/reject?${params.toString()}`)
 
-    if (data.code === 200) {
-      showSuccess('已拒绝申请')
-      await fetchTeamApplications(selectedTeam.value.id)
-    } else {
-      showError(data.message || '拒绝申请失败')
-    }
+    showSuccess('已拒绝申请')
+    await fetchTeamApplications(selectedTeam.value.id)
   } catch (error) {
     if (error !== 'cancel') {
       showError('拒绝申请失败')
@@ -790,21 +934,16 @@ const searchStudent = async () => {
     })
 
     const data = await get(`/users/students/search?${params.toString()}`)
+    searchedStudents.value = data || []
 
-    if (data.code === 200) {
-      searchedStudents.value = data.data || []
-
-      // 如果只有一个结果,自动选择
-      if (searchedStudents.value.length === 1) {
-        foundStudent.value = searchedStudents.value[0]
-        showSuccess(`找到学生: ${foundStudent.value.realName} (${foundStudent.value.studentNo})`)
-      } else if (searchedStudents.value.length > 1) {
-        showSuccess(`找到 ${searchedStudents.value.length} 个匹配的学生`)
-      } else {
-        ElMessage.info('未找到匹配的学生')
-      }
+    // 如果只有一个结果,自动选择
+    if (searchedStudents.value.length === 1) {
+      foundStudent.value = searchedStudents.value[0]
+      showSuccess(`找到学生: ${foundStudent.value.realName} (${foundStudent.value.studentNo})`)
+    } else if (searchedStudents.value.length > 1) {
+      showSuccess(`找到 ${searchedStudents.value.length} 个匹配的学生`)
     } else {
-      showError(data.message || '搜索失败')
+      ElMessage.info('未找到匹配的学生')
     }
   } catch (error) {
     showError('搜索失败')
@@ -835,18 +974,14 @@ const handleInviteMember = async () => {
 
   try {
     const params = new URLSearchParams({
-      invitedUserId: selectedStudent.value.id
+      inviteeStudentNo: selectedStudent.value.studentNo
     })
 
-    const data = await post(`/teams/${invitingTeam.value.id}/invite?${params.toString()}`)
+    await post(`/teams/${invitingTeam.value.id}/invite?${params.toString()}`)
 
-    if (data.code === 200) {
-      showSuccess('邀请已发送')
-      closeInviteDialog()
-      await fetchTeams()
-    } else {
-      showError(data.message || '邀请失败')
-    }
+    showSuccess('邀请已发送')
+    closeInviteDialog()
+    await fetchTeams()
   } catch (error) {
     showError('邀请失败')
   } finally {
@@ -866,17 +1001,12 @@ const searchTeams = async () => {
     })
 
     const data = await get(`/teams/search?${params.toString()}`)
+    searchedTeams.value = data || []
 
-    if (data.code === 200) {
-      searchedTeams.value = data.data || []
-
-      if (searchedTeams.value.length > 0) {
-        showSuccess(`找到 ${searchedTeams.value.length} 个匹配的团队`)
-      } else {
-        ElMessage.info('未找到匹配的团队')
-      }
+    if (searchedTeams.value.length > 0) {
+      showSuccess(`找到 ${searchedTeams.value.length} 个匹配的团队`)
     } else {
-      showError(data.message || '搜索失败')
+      ElMessage.info('未找到匹配的团队')
     }
   } catch (error) {
     showError('搜索失败')
@@ -885,14 +1015,10 @@ const searchTeams = async () => {
 
 const applyToTeam = async (team) => {
   try {
-    const data = await post(`/teams/${team.id}/apply`)
+    await post(`/teams/${team.id}/apply`)
 
-    if (data.code === 200) {
-      showSuccess('申请已发送')
-      await fetchMyApplications()
-    } else {
-      showError(data.message || '申请失败')
-    }
+    showSuccess('申请已发送')
+    await fetchMyApplications()
   } catch (error) {
     showError('申请失败')
   }
@@ -902,14 +1028,10 @@ const cancelApplication = async (application) => {
   try {
     await showConfirm('确定要取消此申请吗？', '取消申请')
 
-    const data = await del(`/teams/applications/${application.id}`)
+    await del(`/teams/applications/${application.id}`)
 
-    if (data.code === 200) {
-      showSuccess('申请已取消')
-      await fetchMyApplications()
-    } else {
-      showError(data.message || '取消失败')
-    }
+    showSuccess('申请已取消')
+    await fetchMyApplications()
   } catch (error) {
     if (error !== 'cancel') {
       showError('取消失败')
@@ -919,14 +1041,10 @@ const cancelApplication = async (application) => {
 
 const acceptInvitation = async (invitation) => {
   try {
-    const data = await post(`/teams/invitations/${invitation.id}/accept`)
+    await post(`/teams/invitations/${invitation.id}/accept`)
 
-    if (data.code === 200) {
-      showSuccess('已接受邀请')
-      await Promise.all([fetchInvitations(), fetchTeams()])
-    } else {
-      showError(data.message || '接受邀请失败')
-    }
+    showSuccess('已接受邀请')
+    await Promise.all([fetchInvitations(), fetchTeams()])
   } catch (error) {
     showError('接受邀请失败')
   }
@@ -936,14 +1054,10 @@ const rejectInvitation = async (invitation) => {
   try {
     await showConfirm('确定要拒绝这个邀请吗？', '拒绝邀请')
 
-    const data = await post(`/teams/invitations/${invitation.id}/reject`)
+    await post(`/teams/invitations/${invitation.id}/reject`)
 
-    if (data.code === 200) {
-      showSuccess('已拒绝邀请')
-      await fetchInvitations()
-    } else {
-      showError(data.message || '拒绝邀请失败')
-    }
+    showSuccess('已拒绝邀请')
+    await fetchInvitations()
   } catch (error) {
     if (error !== 'cancel') {
       showError('拒绝邀请失败')
@@ -952,8 +1066,19 @@ const rejectInvitation = async (invitation) => {
 }
 
 const getTrackName = (team) => {
+  if (!team.competitionTrackId) return '待报名时选择'
   const track = tracks.value.find(t => t.id === team.competitionTrackId)
   return track ? track.trackName : '未知赛道'
+}
+
+const getCompetitionName = (team) => {
+  if (!team.competitionTrackId) return '未报名赛事'
+  // 先找到track，再通过track找到competition
+  const track = tracks.value.find(t => t.id === team.competitionTrackId)
+  if (!track) return '未知比赛'
+
+  const competition = competitions.value.find(c => c.id === track.competitionId)
+  return competition ? competition.competitionName : '未知比赛'
 }
 
 const getTeamStatusClass = (status) => {
@@ -974,6 +1099,51 @@ const getTeamStatusText = (status) => {
     AWARDED: '已获奖'
   }
   return texts[status] || status
+}
+
+// 新的状态badge辅助方法
+const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case 'CONFIRMED':
+    case 'REGISTERED':
+      return 'badge-success'
+    case 'FORMING':
+      return 'badge-warning'
+    default:
+      return 'badge-info'
+  }
+}
+
+const getStatusText = (status) => {
+  const texts = {
+    FORMING: '组建中',
+    CONFIRMED: '已确认',
+    REGISTERED: '已报名',
+    SUBMITTED: '已提交',
+    REVIEWED: '已评审',
+    AWARDED: '已获奖'
+  }
+  return texts[status] || status
+}
+
+const getInviteDisabledReason = (team) => {
+  if (team.status !== 'FORMING') {
+    return '团队已确认锁定，无法邀请新成员'
+  }
+  if (team.currentMemberCount >= team.maxMemberCount) {
+    return '团队成员已满，无法邀请新成员'
+  }
+  return '无法邀请成员'
+}
+
+const getInviteDisabledReasonShort = (team) => {
+  if (team.status !== 'FORMING') {
+    return '(已锁定)'
+  }
+  if (team.currentMemberCount >= team.maxMemberCount) {
+    return '(已满员)'
+  }
+  return ''
 }
 
 const getInvitationStatusClass = (status) => {
@@ -1005,11 +1175,31 @@ const getApplicationStatusClass = (status) => {
 
 const getApplicationStatusText = (status) => {
   const texts = {
-    PENDING: '待审核',
+    PENDING: '待评审',
     ACCEPTED: '已通过',
     REJECTED: '已拒绝'
   }
   return texts[status] || status
+}
+
+const getApplyDisabledReason = (team) => {
+  if (team.status !== 'FORMING') {
+    return '团队已确认锁定，无法申请加入'
+  }
+  if (team.currentMemberCount >= team.maxMemberCount) {
+    return '团队成员已满，无法申请加入'
+  }
+  return '无法申请加入此团队'
+}
+
+const getApplyDisabledReasonShort = (team) => {
+  if (team.status !== 'FORMING') {
+    return '(已锁定)'
+  }
+  if (team.currentMemberCount >= team.maxMemberCount) {
+    return '(已满员)'
+  }
+  return ''
 }
 
 </script>
@@ -1067,106 +1257,545 @@ const getApplicationStatusText = (status) => {
 
 .tab-action-btn {
   flex-shrink: 0;
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  border-radius: 10px !important;
 }
 
-.team-card,
-.invitation-card,
-.application-card,
-.team-result-card {
-  padding: var(--spacing-xl);
-  transition: all var(--transition-fast);
+.tab-action-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* === Modern Team Card Design === */
+
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: var(--spacing-md);
+}
+
+.team-card {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  height: 360px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.team-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0071e3 0%, #00c7be 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .team-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(0, 113, 227, 0.12);
+  border-color: rgba(0, 113, 227, 0.15);
+}
+
+.team-card:hover::before {
+  opacity: 1;
+}
+
+/* Card Header */
+.card-header {
+  padding: 20px 20px 16px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-name {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #1d1d1f;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.team-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-code {
+  font-family: 'SF Mono', 'SF Pro Text', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: #86868b;
+  letter-spacing: 0.3px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-family: 'SF Pro Text', -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badge-success {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  color: white;
+}
+
+.badge-warning {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+}
+
+.badge-info {
+  background: rgba(0, 113, 227, 0.12);
+  color: #0071e3;
+  border: 1px solid rgba(0, 113, 227, 0.2);
+}
+
+/* Competition Section */
+.competition-section {
+  padding: 0 20px 16px 20px;
+}
+
+.competition-card {
+  padding: 14px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 60px;
+}
+
+.competition-card.registered {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.competition-card.unregistered {
+  background: rgba(142, 142, 147, 0.05);
+  border: 1px solid rgba(142, 142, 147, 0.12);
+}
+
+.competition-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.competition-card.registered .competition-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.competition-card.unregistered .competition-icon {
+  background: rgba(142, 142, 147, 0.12);
+  color: #86868b;
+}
+
+.competition-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.competition-label {
+  font-family: 'SF Pro Text', -apple-system, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.competition-card.registered .competition-label {
+  color: rgba(102, 126, 234, 0.7);
+}
+
+.competition-card.unregistered .competition-label {
+  color: rgba(142, 142, 147, 0.7);
+}
+
+.competition-name {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin-bottom: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competition-card.registered .competition-name {
+  color: #1d1d1f;
+}
+
+.competition-card.unregistered .competition-name {
+  color: #86868b;
+}
+
+.track-name {
+  font-family: 'SF Pro Text', -apple-system, sans-serif;
+  font-size: 12px;
+  color: #0071e3;
+  font-weight: 500;
+}
+
+/* Stats Section */
+.stats-section {
+  padding: 0 20px 12px 20px;
+  flex: 1;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 10px;
+  height: 42px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.stat-item svg {
+  color: #0071e3;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.stat-text {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+}
+
+.stat-value {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.2px;
+}
+
+.stat-divider {
+  color: #86868b;
+  font-weight: 400;
+  margin: 0 1px;
+  font-size: 12px;
+}
+
+.stat-max {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #86868b;
+  letter-spacing: -0.2px;
+}
+
+.stat-label {
+  font-family: 'SF Pro Text', -apple-system, sans-serif;
+  font-size: 10px;
+  color: #86868b;
+  letter-spacing: 0.2px;
+  margin-left: 3px;
+}
+
+.stat-divider-line {
+  width: 1px;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.stat-value {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.2px;
+}
+
+.stat-divider {
+  color: #86868b;
+  font-weight: 400;
+  margin: 0 2px;
+}
+
+.stat-max {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #86868b;
+  letter-spacing: -0.2px;
+}
+
+.stat-label {
+  font-family: 'SF Pro Text', -apple-system, sans-serif;
+  font-size: 11px;
+  color: #86868b;
+  letter-spacing: 0.2px;
+  margin-top: 2px;
+}
+
+.stat-divider-line {
+  width: 1px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Actions Section */
+.actions-section {
+  padding: 12px 20px 16px 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.01);
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.btn-primary {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #0071e3 0%, #0077ed 100%);
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 113, 227, 0.2);
+}
+
+.btn-primary:hover::before {
+  opacity: 1;
+}
+
+.btn-secondary {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 113, 227, 0.2);
+  background: rgba(0, 113, 227, 0.04);
+  color: #0071e3;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  position: relative;
+  white-space: nowrap;
+}
+
+.btn-secondary:hover {
+  background: rgba(0, 113, 227, 0.08);
+  border-color: rgba(0, 113, 227, 0.3);
   transform: translateY(-2px);
 }
 
-.team-header,
+.btn-disabled {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(142, 142, 147, 0.15);
+  background: rgba(142, 142, 147, 0.06);
+  color: #86868b;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: not-allowed;
+  opacity: 0.6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.disabled-hint {
+  font-size: 10px;
+  color: rgba(142, 142, 147, 0.8);
+  font-weight: 500;
+  margin-left: 3px;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  border: 1.5px solid white;
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+  .teams-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .team-card {
+    height: auto;
+    min-height: 360px;
+  }
+
+  .actions-section {
+    flex-direction: column;
+  }
+
+  .actions-section button {
+    width: 100%;
+  }
+
+  .stat-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stat-divider-line {
+    width: 100%;
+    height: 1px;
+  }
+}
+
+/* === Invitation & Application Cards === */
+
+.invitation-card,
+.application-card {
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.invitation-card:hover,
+.application-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
 .invitation-header,
 .application-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  padding: 24px 24px 20px 24px;
+  gap: 16px;
 }
 
-.team-info,
-.invitation-info,
-.application-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+.invitation-title-section,
+.application-title-section {
+  flex: 1;
 }
 
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm) 0;
-  border-bottom: 1px solid var(--color-border-light);
+.invitation-name,
+.application-name {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #1d1d1f;
+  margin: 0;
 }
 
-.info-row:last-child {
-  border-bottom: none;
+.invitation-stats,
+.application-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 24px 24px 24px;
 }
 
-.info-label {
-  color: var(--color-text-secondary);
-}
-
-.info-value {
-  font-weight: 500;
-}
-
-.team-actions,
 .invitation-actions,
 .application-actions {
-  margin-top: var(--spacing-lg);
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.01);
 }
 
 .invitation-processed {
-  padding: var(--spacing-md);
+  padding: 16px 24px;
   background: rgba(0, 0, 0, 0.02);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   text-align: center;
-  color: var(--color-text-light);
+  color: #86868b;
+  font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
 }
 
-.search-section {
-  padding: var(--spacing-xl);
-}
-
-.search-form {
-  flex-wrap: wrap;
-}
-
-.invite-steps {
-  padding: var(--spacing-md);
-}
-
-.step-section {
-  margin-bottom: var(--spacing-xl);
-}
-
-.section-title {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 600;
-  margin-bottom: var(--spacing-md);
-}
-
-.result-title {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-accent);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+/* Other sections remain unchanged */
 .team-brief-info {
   display: flex;
   flex-direction: column;

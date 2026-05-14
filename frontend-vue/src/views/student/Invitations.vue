@@ -92,12 +92,7 @@ onMounted(async () => {
 const fetchInvitations = async () => {
   try {
     const data = await get('/teams/invitations/pending')
-
-    if (data.code === 200) {
-      invitations.value = data.data || []
-    } else {
-      showError(data.message || '获取邀请列表失败')
-    }
+    invitations.value = data || []
   } catch (error) {
     showError('获取邀请列表失败')
   }
@@ -105,14 +100,9 @@ const fetchInvitations = async () => {
 
 const acceptInvitation = async (invitation) => {
   try {
-    const data = await post(`/teams/invitations/${invitation.id}/accept`)
-
-    if (data.code === 200) {
-      showSuccess('已接受邀请')
-      await fetchInvitations()
-    } else {
-      showError(data.message || '接受邀请失败')
-    }
+    await post(`/teams/invitations/${invitation.id}/accept`)
+    showSuccess('已接受邀请')
+    await fetchInvitations()
   } catch (error) {
     showError('接受邀请失败')
   }
@@ -122,14 +112,9 @@ const rejectInvitation = async (invitation) => {
   try {
     await showConfirm('确定要拒绝这个邀请吗？', '拒绝邀请')
 
-    const data = await post(`/teams/invitations/${invitation.id}/reject`)
-
-    if (data.code === 200) {
-      showSuccess('已拒绝邀请')
-      await fetchInvitations()
-    } else {
-      showError(data.message || '拒绝邀请失败')
-    }
+    await post(`/teams/invitations/${invitation.id}/reject`)
+    showSuccess('已拒绝邀请')
+    await fetchInvitations()
   } catch (error) {
     if (error !== 'cancel') {
       showError('拒绝邀请失败')

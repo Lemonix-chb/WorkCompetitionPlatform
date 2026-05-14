@@ -94,6 +94,24 @@ public class Team {
     private LocalDateTime updateTime;
 
     /**
+     * 队长姓名（瞬态字段，用于搜索结果显示）
+     */
+    @TableField(exist = false)
+    private String leaderName;
+
+    /**
+     * 队长学号（瞬态字段，用于搜索结果显示）
+     */
+    @TableField(exist = false)
+    private String leaderStudentNo;
+
+    /**
+     * 赛道名称（瞬态字段，用于搜索结果显示）
+     */
+    @TableField(exist = false)
+    private String trackName;
+
+    /**
      * 团队状态枚举
      */
     public enum TeamStatus {

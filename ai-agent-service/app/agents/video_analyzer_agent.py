@@ -1,7 +1,7 @@
 """
-VideoAnalyzerAgent - 视频作品审核专家
+VideoAnalyzerAgent - 视频作品评审专家
 
-职责：审核数媒动漫与短视频作品
+职责：评审数媒动漫与短视频作品
 
 官方评分维度（校教发〔2024〕77号）：
 - 故事性（叙事手法、情节逻辑、内容丰富度）: 0-25分
@@ -21,8 +21,7 @@ VideoAnalyzerAgent - 视频作品审核专家
 - 片头片尾：必须包含
 - 主创信息标注：片头片尾是否有署名
 
-作者：AI Agent架构重构项目
-创建时间：2026-05-03
+
 """
 
 import os
@@ -114,7 +113,7 @@ class VideoAnalyzerAgent:
         additional_files: Optional[List[str]] = None
     ) -> VideoReviewOutput:
         """
-        完整视频审核流程
+        完整视频评审流程
 
         Args:
             video_path: 视频文件路径
@@ -127,11 +126,31 @@ class VideoAnalyzerAgent:
         # 步骤1：使用FFmpegTool提取元数据并检查硬性要求
         ffmpeg_result = self.ffmpeg_tool._run(video_path)
 
+        # 即使FFmpegTool失败，也继续评审（降级策略）
         if not ffmpeg_result.get("success"):
-            raise ValueError(f"视频元数据提取失败：{ffmpeg_result.get('error')}")
-
-        metadata = ffmpeg_result["metadata"]
-        compliance_check = ffmpeg_result["compliance_check"]
+            # 使用默认元数据
+            metadata = ffmpeg_result.get("metadata", {
+                "file_path": video_path,
+                "duration_seconds": 0,
+                "width": 0,
+                "height": 0,
+                "codec": "unknown",
+                "format": "unknown",
+                "file_size_mb": 0,
+                "duration_formatted": "unknown"
+            })
+            compliance_check = ffmpeg_result.get("compliance_check", {
+                "duration_valid": False,
+                "ratio_valid": False,
+                "resolution_valid": False,
+                "format_valid": False,
+                "size_valid": False,
+                "all_valid": False,
+                "errors": ["元数据提取失败，无法验证硬性要求"]
+            })
+        else:
+            metadata = ffmpeg_result["metadata"]
+            compliance_check = ffmpeg_result["compliance_check"]
 
         # 步骤2：构建LLM评审prompt
         prompt = self._build_review_prompt(metadata, compliance_check, work_description)
@@ -149,7 +168,7 @@ class VideoAnalyzerAgent:
 
     def _get_system_prompt(self) -> str:
         """系统提示词：定义评审角色和标准"""
-        return """你是一位专业的视频作品评审专家，负责审核大学生计算机设计大赛的数媒动漫与短视频作品。
+        return """你是一位专业的视频作品评审专家，负责评审大学生计算机设计大赛的数媒动漫与短视频作品。
 
 评审标准（根据校教发〔2024〕77号文件）：
 

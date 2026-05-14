@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.workcompetitionplatform.mapper.AIReviewDetailMapper">
+
+    <!-- 根据AI评审报告ID查询所有详情 -->
+    <select id="selectByAiReviewReportId" resultType="com.example.workcompetitionplatform.entity.AIReviewDetail">
+        SELECT * FROM ai_review_detail
+        WHERE report_id = #{aiReviewReportId}
+        ORDER BY id ASC
+    </select>
+
+    <!-- 根据评审维度查询AI评审详情 -->
+    <select id="selectByReviewDimension" resultType="com.example.workcompetitionplatform.entity.AIReviewDetail">
+        SELECT * FROM ai_review_detail
+        WHERE review_dimension = #{reviewDimension}
+        ORDER BY score DESC, id ASC
+    </select>
+
+    <!-- 根据评审等级查询AI评审详情 -->
+    <select id="selectByReviewLevel" resultType="com.example.workcompetitionplatform.entity.AIReviewDetail">
+        SELECT * FROM ai_review_detail
+        WHERE review_level = #{reviewLevel}
+        ORDER BY score DESC, id ASC
+    </select>
+
+</mapper>

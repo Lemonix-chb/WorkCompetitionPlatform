@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * AI审核回调请求DTO
+ * AI评审回调请求DTO
  * Python Agent回调给Spring Boot的数据结构
  *
  * @author 陈海波
@@ -33,7 +33,7 @@ public class AIReviewCallbackRequest {
     }
 
     /**
-     * AI审核报告DTO（Python Agent返回）
+     * AI评审报告DTO（Python Agent返回）
      */
     public static class AIReviewReportDTO {
 
@@ -48,6 +48,9 @@ public class AIReviewCallbackRequest {
 
         private String reviewSummary;
         private List<String> improvementSuggestions;
+
+        private List<String> strengths;
+        private List<String> weaknesses;
 
         private String aiModel;
         private String riskLevel;
@@ -123,6 +126,22 @@ public class AIReviewCallbackRequest {
 
         public void setImprovementSuggestions(List<String> improvementSuggestions) {
             this.improvementSuggestions = improvementSuggestions;
+        }
+
+        public List<String> getStrengths() {
+            return strengths;
+        }
+
+        public void setStrengths(List<String> strengths) {
+            this.strengths = strengths;
+        }
+
+        public List<String> getWeaknesses() {
+            return weaknesses;
+        }
+
+        public void setWeaknesses(List<String> weaknesses) {
+            this.weaknesses = weaknesses;
         }
 
         public String getAiModel() {

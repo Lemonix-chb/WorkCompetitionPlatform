@@ -66,11 +66,13 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/login",
                                 "/api/auth/register",
-                                "/api/competitions",  // 赛事列表（公开）
-                                "/api/competitions/*",  // 赛事详情（公开）
-                                "/api/competitions/*/tracks",  // 赛事赛道（公开）
-                                "/api/competitions/ongoing",  // 进行中赛事（公开）
-                                "/api/competitions/published",  // 已发布赛事（公开）
+                                "/api/competitions",
+                                "/api/competitions/*",
+                                "/api/competitions/*/tracks",
+                                "/api/competitions/*/time-status",
+                                "/api/competitions/ongoing",
+                                "/api/competitions/published",
+                                "/api/ai-reviews/callback",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",

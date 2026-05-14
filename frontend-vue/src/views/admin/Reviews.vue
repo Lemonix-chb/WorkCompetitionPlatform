@@ -11,10 +11,11 @@
       <div class="filters-section card card-flat scale-in mb-lg">
         <div class="filters-row flex gap-md">
           <el-select v-model="filters.competitionId" placeholder="选择赛事" clearable style="width: 250px">
+            <el-option label="全部赛事" :value="0" />
             <el-option v-for="comp in competitions" :key="comp.id" :label="comp.competitionName" :value="comp.id" />
           </el-select>
 
-          <el-select v-model="filters.trackId" placeholder="选择赛道" clearable style="width: 200px" :disabled="!filters.competitionId">
+          <el-select v-model="filters.trackId" placeholder="选择赛道" clearable style="width: 200px" :disabled="filters.competitionId === 0 || !filters.competitionId">
             <el-option v-for="track in filteredTracks" :key="track.id" :label="track.trackName" :value="track.id" />
           </el-select>
 
@@ -50,47 +51,64 @@
                 {{ row.submissionCode || 'N/A' }}
               </template>
             </el-table-column>
-            <el-table-column label="团队名称" width="180">
+            <el-table-column label="团队名称" width="160">
               <template #default="{ row }">
                 {{ row.teamName || '未知团队' }}
               </template>
             </el-table-column>
-            <el-table-column label="AI评审分" width="120">
+            <el-table-column label="作品名称" width="160">
+              <template #default="{ row }">
+                {{ row.workName || '未知作品' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="评审进度" width="120">
+              <template #default="{ row }">
+                <div class="progress-cell">
+                  <div class="progress-text">
+                    {{ row.completedReviewCount }}/{{ row.totalReviewCount }}
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" :style="{ width: row.reviewProgress + '%' }"></div>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="平均评审分" width="110">
+              <template #default="{ row }">
+                <span :class="getScoreClass(row.averageScore)">
+                  {{ row.averageScore ? row.averageScore.toFixed(1) : '待评审' }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="AI评审分" width="100">
               <template #default="{ row }">
                 <span :class="getScoreClass(row.aiScore)">
                   {{ row.aiScore ? row.aiScore.toFixed(1) : '未评审' }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="评委评审分" width="120">
-              <template #default="{ row }">
-                <span :class="getScoreClass(row.judgeScore)">
-                  {{ row.judgeScore ? row.judgeScore.toFixed(1) : '未评审' }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="最终得分" width="120">
+            <el-table-column label="最终得分" width="100">
               <template #default="{ row }">
                 <span :class="getScoreClass(row.finalScore)">
                   {{ row.finalScore ? row.finalScore.toFixed(1) : '待计算' }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="奖项" width="120">
+            <el-table-column label="评审状态" width="100">
+              <template #default="{ row }">
+                <span :class="getReviewStatusClass(row)" class="badge">
+                  {{ getReviewStatusText(row) }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column label="奖项" width="100">
               <template #default="{ row }">
                 <span :class="getAwardClass(row.awardLevel)" class="badge">
                   {{ getAwardText(row.awardLevel) || '未设置' }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="状态" width="120">
-              <template #default="{ row }">
-                <span :class="getStatusClass(row.status)" class="badge">
-                  {{ getStatusText(row.status) }}
-                </span>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="280" fixed="right">
+            <el-table-column label="操作" width="250" fixed="right">
               <template #default="{ row }">
                 <div class="action-buttons flex gap-xs">
                   <button class="btn-action-detail" @click="viewDetail(row)">
@@ -100,7 +118,7 @@
                     </svg>
                     详情
                   </button>
-                  <button class="btn-action-calc" @click="calculateFinal(row)" :disabled="row.status === 'COMPLETED'">
+                  <button class="btn-action-calc" @click="calculateFinal(row)" :disabled="!row.allReviewsCompleted || row.finalResultCalculated">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
                       <path d="M8 5V11M5 8H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -233,7 +251,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { get, post, postForm } from '@/utils/api'
+import { get, post } from '@/utils/api'
 import { showSuccess, showError, showWarning, showConfirm } from '@/utils/messageUtils'
 
 const reviewResults = ref([])
@@ -294,23 +312,25 @@ const fetchReviewResults = async () => {
   loading.value = true
 
   try {
-    if (filters.competitionId) {
-      const data = await get(`/reviews/competition/${filters.competitionId}`)
-      let result = data || []
-      if (filters.trackId) {
-        result = result.filter(r => r.competitionTrackId === filters.trackId)
-      }
-      if (filters.awardLevel) {
-        result = result.filter(r => r.awardLevel === filters.awardLevel)
-      }
-      reviewResults.value = result
-      pagination.total = result.length
-    } else {
-      reviewResults.value = []
-      pagination.total = 0
+    // 默认查询所有赛事（传入0）
+    const targetCompetitionId = filters.competitionId || 0
+
+    // 使用新的评审状态汇总API
+    const data = await get(`/reviews/submission-summary/${targetCompetitionId}`)
+    let result = data || []
+
+    // 赛道和奖项过滤
+    if (filters.trackId && filters.competitionId !== 0) {
+      result = result.filter(r => r.competitionTrackId === filters.trackId)
     }
+    if (filters.awardLevel) {
+      result = result.filter(r => r.awardLevel === filters.awardLevel)
+    }
+
+    reviewResults.value = result
+    pagination.total = result.length
   } catch (error) {
-    showError('获取评审结果失败')
+    showError('获取评审状态失败')
   } finally {
     loading.value = false
   }
@@ -320,15 +340,7 @@ const viewDetail = async (result) => {
   selectedResult.value = result
   showDetailDialog.value = true
 
-  // Fetch judge reviews if not loaded
-  if (result.submissionId && !result.judgeReviews) {
-    try {
-      const data = await get(`/reviews/judge/submission/${result.submissionId}`)
-      selectedResult.value.judgeReviews = data || []
-    } catch (error) {
-      console.error('获取评委评审记录失败')
-    }
-  }
+  // 新数据结构已包含judgeReviews，无需额外请求
 }
 
 const calculateFinal = async (result) => {
@@ -349,7 +361,11 @@ const calculateFinal = async (result) => {
 }
 
 const setAward = (result) => {
-  awardForm.reviewResultId = result.id
+  if (!result.reviewResultId) {
+    showWarning('该作品尚未生成评审结果，请先计算最终结果')
+    return
+  }
+  awardForm.reviewResultId = result.reviewResultId
   awardForm.awardLevel = result.awardLevel || null
   showAwardDialog.value = true
 }
@@ -363,9 +379,12 @@ const submitAward = async () => {
   submitting.value = true
 
   try {
-    await postForm(`/reviews/award/${awardForm.reviewResultId}`, {
+    // 构造URL查询参数
+    const queryParams = new URLSearchParams({
       awardLevel: awardForm.awardLevel
-    })
+    }).toString()
+
+    await post(`/reviews/award/${awardForm.reviewResultId}?${queryParams}`)
 
     showSuccess('奖项已设置')
     showAwardDialog.value = false
@@ -415,6 +434,26 @@ const getStatusText = (status) => {
     COMPLETED: '已完成'
   }
   return texts[status] || status
+}
+
+const getReviewStatusClass = (row) => {
+  if (row.allReviewsCompleted) {
+    return 'badge-success'
+  }
+  if (row.completedReviewCount > 0) {
+    return 'badge-primary'
+  }
+  return 'badge-warning'
+}
+
+const getReviewStatusText = (row) => {
+  if (row.allReviewsCompleted) {
+    return '评审完成'
+  }
+  if (row.completedReviewCount > 0) {
+    return `评审中 (${row.pendingReviewCount}个待评)`
+  }
+  return '待评审'
 }
 
 const getAwardClass = (awardLevel) => {
@@ -609,6 +648,51 @@ const fetchJudges = async () => {
 .judge-comments {
   color: var(--color-text-secondary);
   line-height: 1.5;
+}
+
+.progress-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent) 0%, #60a5fa 100%);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1px;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .action-buttons {

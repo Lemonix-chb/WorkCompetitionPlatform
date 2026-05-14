@@ -146,4 +146,12 @@ public interface ISubmissionService extends IService<Submission> {
      * @return 提交记录列表
      */
     List<Submission> listAllSubmissions();
+
+    /**
+     * 根据作品ID查询提交记录
+     *
+     * @param workId 作品ID
+     * @return 提交记录实体
+     */
+    Submission getByWorkId(Long workId);
 }

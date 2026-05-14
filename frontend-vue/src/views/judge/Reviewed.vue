@@ -146,6 +146,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { get } from '@/utils/api'
+import { formatDateTime } from '@/utils/dateUtils'
 import {
   formatFileSize,
   getAttachmentTypeText,
@@ -165,10 +167,9 @@ const currentReview = ref(null)
 const currentWorkAttachments = ref([])
 
 onMounted(async () => {
-  const token = localStorage.getItem('token')
   const role = localStorage.getItem('userRole')
 
-  if (!token || role !== 'JUDGE') {
+  if (role !== 'JUDGE') {
     ElMessage.warning('您没有权限访问此页面')
     router.push('/login')
     return
@@ -180,32 +181,23 @@ onMounted(async () => {
 const fetchReviewedTasks = async () => {
   loading.value = true
   try {
-    const token = localStorage.getItem('token')
-
     // 获取我的评审任务
-    const response = await fetch('/api/reviews/my', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
+    const data = await get('/reviews/my')
 
-    if (data.code === 200) {
-      // 过滤出已评审的任务（SUBMITTED状态）
-      const allTasks = data.data || []
-      reviewedTasks.value = allTasks.filter(task => task.status === 'SUBMITTED')
+    // 过滤出已评审的任务（SUBMITTED状态）
+    const allTasks = data || []
+    reviewedTasks.value = allTasks.filter(task => task.status === 'SUBMITTED')
 
-      // 如果有任务，获取相关的submission和work信息
-      if (reviewedTasks.value.length > 0) {
-        await Promise.all([
-          fetchSubmissions(),
-          fetchWorks(),
-          fetchTeams()
-        ])
-      }
-    } else {
-      ElMessage.error(data.message || '获取评审记录失败')
+    // 如果有任务，获取相关的submission和work信息
+    if (reviewedTasks.value.length > 0) {
+      await Promise.all([
+        fetchSubmissions(),
+        fetchWorks(),
+        fetchTeams()
+      ])
     }
   } catch (error) {
-    ElMessage.error('获取评审记录失败')
+    console.error('获取评审记录失败', error)
   } finally {
     loading.value = false
   }
@@ -213,14 +205,8 @@ const fetchReviewedTasks = async () => {
 
 const fetchSubmissions = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/submissions/all', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      submissions.value = data.data || []
-    }
+    const data = await get('/submissions/all')
+    submissions.value = data || []
   } catch (error) {
     console.error('获取提交列表失败', error)
   }
@@ -228,14 +214,8 @@ const fetchSubmissions = async () => {
 
 const fetchWorks = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/works/all', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      works.value = data.data || []
-    }
+    const data = await get('/works/all')
+    works.value = data || []
   } catch (error) {
     console.error('获取作品列表失败', error)
   }
@@ -243,14 +223,8 @@ const fetchWorks = async () => {
 
 const fetchTeams = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/teams', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    const data = await response.json()
-    if (data.code === 200) {
-      teams.value = data.data || []
-    }
+    const data = await get('/teams')
+    teams.value = data || []
   } catch (error) {
     console.error('获取团队列表失败', error)
   }
@@ -285,11 +259,6 @@ const getWorkType = (submissionId) => {
     VIDEO: '数媒动漫'
   }
   return texts[work.workType] || work.workType
-}
-
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleString('zh-CN')
 }
 
 const getScoreClass = (score) => {

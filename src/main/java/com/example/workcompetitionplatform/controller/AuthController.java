@@ -113,7 +113,7 @@ public class AuthController {
 
             log.info("用户注册成功：{}", registerRequest.getUsername());
 
-            return ApiResponse.success("注册成功，请等待管理员审核", user);
+            return ApiResponse.success("注册成功，请等待管理员评审", user);
         } catch (Exception e) {
             log.error("用户注册失败：{}", registerRequest.getUsername(), e);
             return ApiResponse.error(e.getMessage());

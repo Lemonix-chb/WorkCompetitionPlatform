@@ -118,8 +118,9 @@ public class RegistrationController {
 
             registrationMapper.insert(registration);
 
-            // 更新团队状态为已报名
+            // 更新团队状态为已报名，并关联赛道
             team.setStatus(Team.TeamStatus.REGISTERED);
+            team.setCompetitionTrackId(trackId);
             teamMapper.updateById(team);
 
             log.info("报名成功：用户 {} 团队 {} 报名赛事 {} 赛道 {}，报名编号 {}",
@@ -145,5 +146,57 @@ public class RegistrationController {
         Long userId = UserContext.getCurrentUserId();
         List<Registration> registrations = registrationMapper.selectByUserId(userId);
         return ApiResponse.success(registrations);
+    }
+
+    /**
+     * 退赛（取消报名）
+     * 学生在报名期内可取消已报名的赛事，团队状态回退为CONFIRMED
+     *
+     * @param competitionId 赛事ID
+     * @return API响应
+     */
+    @Operation(summary = "退赛")
+    @DeleteMapping
+    @PreAuthorize("hasRole('STUDENT')")
+    @Transactional
+    public ApiResponse<Void> withdrawRegistration(
+            @Parameter(description = "赛事ID") @RequestParam Long competitionId) {
+
+        Long userId = UserContext.getCurrentUserId();
+
+        // 查找该用户在该赛事的报名记录
+        Registration registration = registrationMapper.selectByCompetitionIdAndUserId(competitionId, userId);
+        if (registration == null) {
+            return ApiResponse.notFound("未找到该赛事的报名记录");
+        }
+
+        if (registration.getStatus() == Registration.RegistrationStatus.CANCELLED) {
+            return ApiResponse.error("该报名已取消");
+        }
+
+        // 检查是否仍在报名期内
+        Competition competition = competitionMapper.selectById(competitionId);
+        LocalDateTime now = DateTimeConstants.now();
+        if (!now.isAfter(competition.getRegistrationStart()) ||
+            !now.isBefore(competition.getRegistrationEnd())) {
+            return ApiResponse.error("不在报名期内，无法退赛");
+        }
+
+        // 更新报名状态为已退赛
+        registration.setStatus(Registration.RegistrationStatus.CANCELLED);
+        registrationMapper.updateById(registration);
+
+        // 团队状态回退为已确认，清除赛道关联
+        Team team = teamMapper.selectById(registration.getTeamId());
+        if (team != null && team.getStatus() == Team.TeamStatus.REGISTERED) {
+            team.setStatus(Team.TeamStatus.CONFIRMED);
+            team.setCompetitionTrackId(null);
+            teamMapper.updateById(team);
+        }
+
+        log.info("退赛成功：用户 {} 取消赛事 {} 的报名，报名编号 {}",
+                userId, competitionId, registration.getRegistrationCode());
+
+        return ApiResponse.success("退赛成功", null);
     }
 }

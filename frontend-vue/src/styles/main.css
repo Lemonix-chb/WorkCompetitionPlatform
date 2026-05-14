@@ -209,75 +209,6 @@ body {
   border: 1px solid var(--color-border);
 }
 
-/* === Buttons === */
-
-.btn-primary {
-  background: var(--color-accent);
-  color: var(--color-text-white);
-  font-family: var(--font-primary);
-  font-size: 15px;
-  font-weight: 500;
-  padding: 10px 20px;
-  border-radius: var(--radius-md);
-  border: none;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-}
-
-.btn-primary:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background: transparent;
-  color: var(--color-accent);
-  border: 1px solid var(--color-accent);
-  font-family: var(--font-primary);
-  font-size: 15px;
-  font-weight: 500;
-  padding: 10px 20px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.btn-secondary:hover {
-  background: rgba(90, 127, 168, 0.08);
-}
-
-.btn-text {
-  background: transparent;
-  color: var(--color-text-secondary);
-  border: none;
-  font-size: 14px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: color var(--transition-fast);
-}
-
-.btn-text:hover {
-  color: var(--color-accent);
-}
-
-.btn-danger {
-  background: transparent;
-  color: var(--color-error);
-  border: 1px solid var(--color-error);
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.btn-danger:hover {
-  background: rgba(231, 76, 60, 0.08);
-}
-
 /* === Links === */
 
 .link {
@@ -511,19 +442,66 @@ body {
 /* === Element Plus Overrides === */
 
 .el-button--primary {
-  background-color: var(--color-accent) !important;
-  border-color: var(--color-accent) !important;
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 3px rgba(90, 127, 168, 0.25) !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .el-button--primary:hover {
-  background-color: var(--color-accent-hover) !important;
-  border-color: var(--color-accent-hover) !important;
+  background: linear-gradient(135deg, var(--color-accent-hover) 0%, #3d5a7a 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(90, 127, 168, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.el-button--default {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.el-button--default:hover {
+  color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+}
+
+.el-button--danger {
+  border-radius: 8px !important;
+}
+
+.el-button {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
 }
 
 .el-input__wrapper {
-  border-radius: var(--radius-md) !important;
+  border-radius: 8px !important;
   box-shadow: none !important;
   border: 1px solid var(--color-border) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.el-input__wrapper:hover {
+  border-color: var(--color-accent-light) !important;
+}
+
+.el-input__wrapper.is-focus {
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px rgba(90, 127, 168, 0.1) !important;
+}
+
+.el-card {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-subtle) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.el-dialog {
+  border-radius: var(--radius-lg) !important;
 }
 
 .el-input__wrapper:hover {

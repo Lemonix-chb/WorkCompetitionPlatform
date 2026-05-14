@@ -63,7 +63,7 @@ public interface IUserService extends IService<User> {
     List<User> listActiveUsers();
 
     /**
-     * 查询所有待审核用户
+     * 查询所有待评审用户
      *
      * @return 用户列表
      */

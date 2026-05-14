@@ -122,11 +122,26 @@ class FFmpegTool(BaseTool):
                 cmd,
                 capture_output=True,
                 text=True,
+                encoding='utf-8',
+                errors='replace',  # 替换无法解码的字符，避免UnicodeDecodeError
                 check=True,
-                timeout=10
+                timeout=10,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
 
-            data = json.loads(result.stdout)
+            if not result.stdout or result.stdout.strip() == '':
+                return {
+                    'error': 'ffprobe输出为空',
+                    'file_path': video_path
+                }
+
+            try:
+                data = json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                return {
+                    'error': f'JSON解析失败: {str(e)}',
+                    'file_path': video_path
+                }
 
             # 解析关键元数据
             format_info = data.get("format", {})
@@ -174,13 +189,53 @@ class FFmpegTool(BaseTool):
 
         except subprocess.CalledProcessError as e:
             print(f"ffprobe执行失败：{e.stderr}")
-            return None
+            # 返回默认元数据，而不是None
+            return {
+                "file_path": video_path,
+                "duration_seconds": 0,
+                "width": 0,
+                "height": 0,
+                "codec": "unknown",
+                "format": "unknown",
+                "file_size_mb": 0,
+                "bitrate": 0,
+                "fps": 0,
+                "ratio_simplified": "unknown",
+                "duration_formatted": "0:00",
+                "error": str(e.stderr)
+            }
         except json.JSONDecodeError as e:
             print(f"JSON解析失败：{e}")
-            return None
+            return {
+                "file_path": video_path,
+                "duration_seconds": 0,
+                "width": 0,
+                "height": 0,
+                "codec": "unknown",
+                "format": "unknown",
+                "file_size_mb": 0,
+                "bitrate": 0,
+                "fps": 0,
+                "ratio_simplified": "unknown",
+                "duration_formatted": "0:00",
+                "error": f"JSON解析失败: {str(e)}"
+            }
         except Exception as e:
             print(f"元数据提取错误：{e}")
-            return None
+            return {
+                "file_path": video_path,
+                "duration_seconds": 0,
+                "width": 0,
+                "height": 0,
+                "codec": "unknown",
+                "format": "unknown",
+                "file_size_mb": 0,
+                "bitrate": 0,
+                "fps": 0,
+                "ratio_simplified": "unknown",
+                "duration_formatted": "0:00",
+                "error": str(e)
+            }
 
     def _parse_fps(self, video_stream: Dict) -> float:
         """解析视频帧率"""

@@ -250,4 +250,23 @@ public class SubmissionController {
         List<Submission> submissions = submissionService.listAllSubmissions();
         return ApiResponse.success(submissions);
     }
+
+    /**
+     * 根据作品ID查询提交记录
+     * 学生查看作品的提交状态
+     *
+     * @param workId 作品ID
+     * @return API响应（包含提交记录）
+     */
+    @Operation(summary = "根据作品ID查询提交记录")
+    @GetMapping("/work/{workId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ApiResponse<Submission> getSubmissionByWorkId(
+            @Parameter(description = "作品ID") @PathVariable Long workId) {
+        Submission submission = submissionService.getByWorkId(workId);
+        if (submission == null) {
+            return ApiResponse.error(404, "作品未提交");
+        }
+        return ApiResponse.success(submission);
+    }
 }

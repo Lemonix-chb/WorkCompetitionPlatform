@@ -16,11 +16,26 @@ export const useCompetitionStore = defineStore('competition', () => {
     error.value = null
     try {
       const data = await get('/competitions')
-      competitions.value = data.records || []
+      console.log('fetchCompetitions response:', data)  // 添加调试日志
+
+      // 处理两种可能的返回格式：
+      // 1. 分页格式：{ records: [...], total, current, size }
+      // 2. 数组格式：直接返回数组
+      if (Array.isArray(data)) {
+        competitions.value = data
+      } else if (data && data.records) {
+        competitions.value = data.records
+      } else {
+        competitions.value = []
+        console.warn('Unexpected response format from /competitions:', data)
+      }
+
+      console.log('Loaded competitions:', competitions.value.length, 'items')
     } catch (e) {
       error.value = '获取赛事列表失败'
       showError('获取赛事列表失败')
       console.error('Fetch competitions error:', e)
+      competitions.value = []  // 确保失败时清空数组
     } finally {
       loading.value = false
     }

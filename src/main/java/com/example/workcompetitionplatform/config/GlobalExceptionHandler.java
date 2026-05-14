@@ -6,6 +6,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpMethod;
+import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -121,9 +122,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        Class<?> requiredType = e.getRequiredType();
+        String typeName = requiredType != null ? requiredType.getSimpleName() : "未知";
         String errorMessage = String.format("参数 '%s' 类型错误，期望类型：%s",
-                e.getName(),
-                e.getRequiredType().getSimpleName());
+                e.getName(), typeName);
         log.error(errorMessage);
         return ApiResponse.badRequest(errorMessage);
     }
@@ -137,9 +139,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     public ApiResponse<Void> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
+        Set<HttpMethod> supportedMethods = e.getSupportedHttpMethods();
+        String supported = supportedMethods != null
+                ? supportedMethods.stream().map(HttpMethod::name).collect(java.util.stream.Collectors.joining(", "))
+                : "";
         String errorMessage = String.format("不支持请求方法：%s，支持的方法：%s",
-                e.getMethod(),
-                e.getSupportedHttpMethods().stream().map(HttpMethod::name).collect(java.util.stream.Collectors.joining(", ")));
+                e.getMethod(), supported);
         log.error(errorMessage);
         return ApiResponse.error(405, errorMessage);
     }

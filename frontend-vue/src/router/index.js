@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    redirect: '/competitions'
+    redirect: '/login'
   },
   {
     path: '/competitions',
@@ -166,7 +166,8 @@ router.beforeEach((to, from, next) => {
     if (!token) {
       next('/login')
     } else if (to.meta.role && to.meta.role !== userRole) {
-      next('/')
+      // 角色不匹配，跳转到登录页
+      next('/login')
     } else {
       next()
     }

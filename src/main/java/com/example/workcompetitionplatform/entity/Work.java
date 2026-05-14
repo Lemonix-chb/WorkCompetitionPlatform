@@ -3,6 +3,7 @@ package com.example.workcompetitionplatform.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -127,9 +128,29 @@ public class Work {
      * 作品类型枚举
      */
     public enum WorkType {
-        CODE,   // 程序设计
-        PPT,    // 演示文稿
-        VIDEO   // 数媒动漫与短视频
+        CODE("程序设计", Set.of("py", "c", "cpp", "java", "js", "ts")),
+        PPT("演示文稿", Set.of("pptx", "ppt", "pdf")),
+        VIDEO("数媒视频", Set.of("mp4", "avi", "mov", "mkv"));
+
+        private final String description;
+        private final Set<String> allowedExtensions;
+
+        WorkType(String description, Set<String> allowedExtensions) {
+            this.description = description;
+            this.allowedExtensions = allowedExtensions;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public boolean isAllowedExtension(String extension) {
+            return extension != null && allowedExtensions.contains(extension.toLowerCase());
+        }
+
+        public Set<String> getAllowedExtensions() {
+            return allowedExtensions;
+        }
     }
 
     /**

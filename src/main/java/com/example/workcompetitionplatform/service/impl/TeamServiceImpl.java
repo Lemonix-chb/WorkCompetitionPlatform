@@ -3,12 +3,14 @@ package com.example.workcompetitionplatform.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.workcompetitionplatform.entity.*;
+import com.example.workcompetitionplatform.exception.BusinessException;
 import com.example.workcompetitionplatform.mapper.*;
 import com.example.workcompetitionplatform.service.ITeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +30,9 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private RegistrationMapper registrationMapper;
+
     public TeamServiceImpl(TeamMemberMapper teamMemberMapper,
                            TeamInvitationMapper teamInvitationMapper,
                            TeamApplicationMapper teamApplicationMapper) {
@@ -46,10 +51,11 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
         Team team = new Team();
         team.setTeamCode(generateTeamCode());
         team.setTeamName(teamName);
-        team.setCompetitionTrackId(competitionTrackId);
+        team.setCompetitionTrackId(competitionTrackId);  // 允许为null，报名时确定
         team.setLeaderId(leaderId);
         team.setStatus(Team.TeamStatus.FORMING);
         team.setCurrentMemberCount(1);
+        team.setMaxMemberCount(3);  // 默认最大成员数3人
 
         // 保存团队
         save(team);
@@ -110,33 +116,41 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public TeamInvitation inviteMember(Long teamId, Long inviterUserId, Long invitedUserId) {
+    public TeamInvitation inviteMember(Long teamId, Long inviterUserId, String inviteeStudentNo) {
         Team team = getById(teamId);
         if (team == null) {
-            throw new RuntimeException("团队不存在");
+            throw new BusinessException("团队不存在");
         }
 
         // 检查是否有邀请权限（队长）
         if (!team.getLeaderId().equals(inviterUserId)) {
-            throw new RuntimeException("只有队长可以邀请成员");
+            throw new BusinessException("只有队长可以邀请成员");
         }
 
         // 检查团队是否已满员
         if (isTeamFull(teamId)) {
-            throw new RuntimeException("团队已满员");
+            throw new BusinessException("团队已满员");
+        }
+
+        // 根据学号查找被邀请用户
+        User inviteeUser = userMapper.selectByStudentNo(inviteeStudentNo);
+        if (inviteeUser == null) {
+            throw new BusinessException("用户不存在：学号 " + inviteeStudentNo);
         }
 
         // 检查用户是否已在团队中
-        if (isUserInTeam(teamId, invitedUserId)) {
-            throw new RuntimeException("用户已在团队中");
+        if (isUserInTeam(teamId, inviteeUser.getId())) {
+            throw new BusinessException("用户已在团队中");
         }
 
         // 创建邀请记录
         TeamInvitation invitation = new TeamInvitation();
         invitation.setTeamId(teamId);
         invitation.setInviterId(inviterUserId);
-        invitation.setInviteeId(invitedUserId);
+        invitation.setInviteeId(inviteeUser.getId());
+        invitation.setInviteeStudentNo(inviteeStudentNo);
         invitation.setStatus(TeamInvitation.InvitationStatus.PENDING);
+        invitation.setExpireTime(LocalDateTime.now().plusDays(7));
         teamInvitationMapper.insert(invitation);
 
         return invitation;
@@ -147,17 +161,17 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
     public TeamApplication applyToJoin(Long teamId, Long applicantUserId, String applicationReason) {
         Team team = getById(teamId);
         if (team == null) {
-            throw new RuntimeException("团队不存在");
+            throw new BusinessException("团队不存在");
         }
 
         // 检查团队是否已满员
         if (isTeamFull(teamId)) {
-            throw new RuntimeException("团队已满员");
+            throw new BusinessException("团队已满员，无法申请加入");
         }
 
         // 检查用户是否已在团队中
         if (isUserInTeam(teamId, applicantUserId)) {
-            throw new RuntimeException("用户已在团队中");
+            throw new BusinessException("您已在该团队中，无需重复申请");
         }
 
         // 创建申请记录
@@ -176,17 +190,17 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
     public boolean handleInvitation(Long invitationId, Long invitedUserId, boolean accept) {
         TeamInvitation invitation = teamInvitationMapper.selectById(invitationId);
         if (invitation == null) {
-            throw new RuntimeException("邀请不存在");
+            throw new BusinessException("邀请不存在");
         }
 
         // 检查是否是被邀请人
         if (!invitation.getInviteeId().equals(invitedUserId)) {
-            throw new RuntimeException("无权处理此邀请");
+            throw new BusinessException("无权处理此邀请");
         }
 
         // 检查邀请状态
         if (invitation.getStatus() != TeamInvitation.InvitationStatus.PENDING) {
-            throw new RuntimeException("邀请已被处理");
+            throw new BusinessException("邀请已被处理");
         }
 
         // 更新邀请状态
@@ -206,17 +220,17 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
     public boolean handleApplication(Long applicationId, Long teamId, boolean accept, String responseReason) {
         TeamApplication application = teamApplicationMapper.selectById(applicationId);
         if (application == null) {
-            throw new RuntimeException("申请不存在");
+            throw new BusinessException("申请不存在");
         }
 
         Team team = getById(teamId);
         if (team == null) {
-            throw new RuntimeException("团队不存在");
+            throw new BusinessException("团队不存在");
         }
 
         // 检查申请状态
         if (application.getStatus() != TeamApplication.ApplicationStatus.PENDING) {
-            throw new RuntimeException("申请已被处理");
+            throw new BusinessException("申请已被处理");
         }
 
         // 更新申请状态
@@ -237,17 +251,17 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
     public boolean removeMember(Long teamId, Long memberId, Long operatorId) {
         Team team = getById(teamId);
         if (team == null) {
-            throw new RuntimeException("团队不存在");
+            throw new BusinessException("团队不存在");
         }
 
         // 检查是否有移除权限（队长）
         if (!team.getLeaderId().equals(operatorId)) {
-            throw new RuntimeException("只有队长可以移除成员");
+            throw new BusinessException("只有队长可以移除成员");
         }
 
         // 不能移除队长
         if (team.getLeaderId().equals(memberId)) {
-            throw new RuntimeException("不能移除队长");
+            throw new BusinessException("不能移除队长");
         }
 
         // 删除成员记录
@@ -269,12 +283,12 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
     public boolean quitTeam(Long teamId, Long userId) {
         Team team = getById(teamId);
         if (team == null) {
-            throw new RuntimeException("团队不存在");
+            throw new BusinessException("团队不存在");
         }
 
         // 队长不能退出团队
         if (team.getLeaderId().equals(userId)) {
-            throw new RuntimeException("队长不能退出团队");
+            throw new BusinessException("队长不能退出团队，如需退出请先解散团队或转让队长权限");
         }
 
         // 删除成员记录
@@ -296,17 +310,17 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
     public boolean confirmTeam(Long teamId) {
         Team team = getById(teamId);
         if (team == null) {
-            throw new RuntimeException("团队不存在");
+            throw new BusinessException("团队不存在");
         }
 
         // 检查团队状态
         if (team.getStatus() != Team.TeamStatus.FORMING) {
-            throw new RuntimeException("团队不在组建状态");
+            throw new BusinessException("团队不在组建状态，无法确认");
         }
 
         // 检查团队成员数量
         if (getTeamMemberCount(teamId) < 1) {
-            throw new RuntimeException("团队至少需要1名成员");
+            throw new BusinessException("团队至少需要1名成员才能确认");
         }
 
         // 更新团队状态
@@ -394,7 +408,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
     public boolean dissolveTeam(Long teamId) {
         Team team = getById(teamId);
         if (team == null) {
-            throw new RuntimeException("团队不存在");
+            throw new BusinessException("团队不存在");
         }
 
         // 删除所有团队成员
@@ -414,5 +428,18 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team> implements IT
 
         // 删除团队
         return removeById(teamId);
+    }
+
+    @Override
+    public List<Team> searchTeamsFuzzy(String keyword) {
+        return baseMapper.searchTeamsFuzzy(keyword);
+    }
+
+    @Override
+    public List<Registration> listTeamRegistrations(Long teamId) {
+        LambdaQueryWrapper<Registration> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Registration::getTeamId, teamId);
+        wrapper.orderByDesc(Registration::getRegistrationTime);
+        return registrationMapper.selectList(wrapper);
     }
 }
