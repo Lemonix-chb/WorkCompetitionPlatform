@@ -58,9 +58,7 @@ api.interceptors.response.use(
         case 401:
           // 未授权，token 过期或无效
           ElMessage.error('登录已过期，请重新登录')
-          localStorage.removeItem('token')
-          localStorage.removeItem('userRole')
-          localStorage.removeItem('userId')
+          localStorage.clear()
           router.push('/login')
           break
 

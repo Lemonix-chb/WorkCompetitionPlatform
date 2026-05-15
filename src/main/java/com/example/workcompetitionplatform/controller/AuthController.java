@@ -87,6 +87,7 @@ public class AuthController {
             data.put("realName", user.getRealName());
             data.put("role", user.getRole());
             data.put("email", user.getEmail());
+            data.put("studentNo", user.getStudentNo());
 
             log.info("用户登录成功：{}", user.getUsername());
 

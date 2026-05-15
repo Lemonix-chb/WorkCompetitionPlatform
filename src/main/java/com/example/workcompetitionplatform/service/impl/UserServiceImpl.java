@@ -58,6 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public User register(RegisterRequest registerRequest) {
         // 检查用户名是否已存在
         if (existsByUsername(registerRequest.getUsername())) {
@@ -70,7 +71,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
 
         // 检查学号是否已存在（如果有学号）
-        if (registerRequest.getStudentNo() != null && existsByStudentNo(registerRequest.getStudentNo())) {
+        if (registerRequest.getStudentNo() != null && !registerRequest.getStudentNo().isEmpty()
+                && existsByStudentNo(registerRequest.getStudentNo())) {
             throw new RuntimeException("学号已存在");
         }
 
@@ -83,11 +85,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         user.setPhone(registerRequest.getPhone());
         user.setCollege(registerRequest.getCollege());
         user.setMajor(registerRequest.getMajor());
-        user.setStudentNo(registerRequest.getStudentNo());
-        user.setStatus(User.UserStatus.PENDING); // 默认待评审状态
+        user.setStatus(User.UserStatus.PENDING);
+
+        // 根据角色设置学号/工号
+        String roleCode = registerRequest.getRole();
+        if ("JUDGE".equals(roleCode)) {
+            user.setTeacherNo(registerRequest.getStudentNo());
+        } else {
+            user.setStudentNo(registerRequest.getStudentNo());
+            roleCode = "STUDENT";
+        }
 
         // 保存用户
         save(user);
+
+        // 自动分配角色
+        Role role = roleMapper.selectByRoleCode(roleCode);
+        if (role != null) {
+            UserRole userRole = new UserRole();
+            userRole.setUserId(user.getId());
+            userRole.setRoleId(role.getId());
+            userRoleMapper.insert(userRole);
+        }
 
         return user;
     }

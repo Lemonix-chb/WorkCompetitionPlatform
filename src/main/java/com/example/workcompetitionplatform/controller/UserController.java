@@ -3,6 +3,7 @@ package com.example.workcompetitionplatform.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.workcompetitionplatform.dto.ApiResponse;
+import com.example.workcompetitionplatform.dto.ChangePasswordRequest;
 import com.example.workcompetitionplatform.dto.PageResponse;
 import com.example.workcompetitionplatform.entity.User;
 import com.example.workcompetitionplatform.exception.BusinessException;
@@ -12,6 +13,7 @@ import com.example.workcompetitionplatform.util.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -124,7 +126,7 @@ public class UserController {
      */
     @Operation(summary = "查询用户详情")
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.user.id")
     public ApiResponse<User> getUserById(@Parameter(description = "用户ID") @PathVariable Long id) {
         User user = userService.getById(id);
 
@@ -145,29 +147,29 @@ public class UserController {
      */
     @Operation(summary = "更新用户信息")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
+    @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.user.id")
     public ApiResponse<Void> updateUser(
             @Parameter(description = "用户ID") @PathVariable Long id,
             @RequestBody User user) {
 
-        // 检查用户是否存在
         User existingUser = userService.getById(id);
         if (existingUser == null) {
             return ApiResponse.notFound("用户不存在");
         }
 
-        // 设置用户ID
-        user.setId(id);
+        // 只更新允许修改的字段（非null值才更新）
+        if (user.getEmail() != null) existingUser.setEmail(user.getEmail());
+        if (user.getPhone() != null) existingUser.setPhone(user.getPhone());
+        if (user.getCollege() != null) existingUser.setCollege(user.getCollege());
+        if (user.getMajor() != null) existingUser.setMajor(user.getMajor());
 
-        // 非管理员只能更新自己的部分信息
-        if (!UserContext.isAdmin()) {
-            // 防止非管理员修改角色和状态
-            user.setRole(null);
-            user.setStatus(null);
+        // 管理员额外可以修改角色和状态
+        if (UserContext.isAdmin()) {
+            if (user.getRole() != null) existingUser.setRole(user.getRole());
+            if (user.getStatus() != null) existingUser.setStatus(user.getStatus());
         }
 
-        // 更新用户信息
-        boolean success = userService.updateById(user);
+        boolean success = userService.updateById(existingUser);
 
         if (!success) {
             return ApiResponse.error("更新失败");
@@ -183,21 +185,18 @@ public class UserController {
      * 用户修改自己的密码，需要提供旧密码和新密码
      *
      * @param id 用户ID
-     * @param oldPassword 旧密码
-     * @param newPassword 新密码
+     * @param request 密码修改请求（包含旧密码和新密码）
      * @return API响应
      */
     @Operation(summary = "修改密码")
     @PutMapping("/{id}/password")
-    @PreAuthorize("#id == authentication.principal.id")
+    @PreAuthorize("#id == authentication.principal.user.id")
     public ApiResponse<Void> changePassword(
             @Parameter(description = "用户ID") @PathVariable Long id,
-            @Parameter(description = "旧密码") @RequestParam String oldPassword,
-            @Parameter(description = "新密码") @RequestParam String newPassword) {
+            @Valid @RequestBody ChangePasswordRequest request) {
 
         try {
-            // 执行密码修改
-            boolean success = userService.changePassword(id, oldPassword, newPassword);
+            boolean success = userService.changePassword(id, request.getOldPassword(), request.getNewPassword());
 
             if (!success) {
                 return ApiResponse.error("密码修改失败");

@@ -191,6 +191,8 @@ const handleLogin = async () => {
     localStorage.setItem('userId', data.userId)
     localStorage.setItem('userName', data.realName || form.value.username)
     localStorage.setItem('userRole', data.role)
+    localStorage.setItem('email', data.email || '')
+    localStorage.setItem('studentNo', data.studentNo || '')
 
     showSuccess('登录成功')
 

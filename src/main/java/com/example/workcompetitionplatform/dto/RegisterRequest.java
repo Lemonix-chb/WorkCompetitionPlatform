@@ -65,4 +65,9 @@ public class RegisterRequest {
      * 学号
      */
     private String studentNo;
+
+    /**
+     * 用户角色（STUDENT/JUDGE）
+     */
+    private String role;
 }
