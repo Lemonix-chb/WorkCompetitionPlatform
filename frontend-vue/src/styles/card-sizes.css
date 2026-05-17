@@ -74,8 +74,7 @@
 
 /* 操作卡片 - 标准高度 */
 .action-card {
-  min-height: 80px !important;
-  height: 80px;
+  min-height: 100px;
   display: flex;
   align-items: center;
   padding: var(--spacing-lg) !important;

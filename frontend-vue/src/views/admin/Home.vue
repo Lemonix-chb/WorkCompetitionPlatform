@@ -883,6 +883,15 @@ const initCharts = () => {
 
 .action-content {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.action-content .card-title,
+.action-content .caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .action-meta {

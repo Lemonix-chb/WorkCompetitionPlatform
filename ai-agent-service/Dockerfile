@@ -26,11 +26,11 @@ ENV PYTHONUNBUFFERED=1
 ENV DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
 
 # 暴露端口
-EXPOSE 8001
+EXPOSE 8000
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8001/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # 启动FastAPI服务
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

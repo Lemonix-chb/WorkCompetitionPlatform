@@ -1,212 +1,117 @@
-# 信息管理与智能评价系统 - Vue 3 前端项目
+# Work Competition Platform — Vue 3 前端
 
-## 📋 项目概览
+## 技术栈
 
-**技术栈**: Vue 3 + Vite + Pinia + Vue Router + Element Plus
-**开发语言**: JavaScript/TypeScript
-**UI框架**: Element Plus
-**构建工具**: Vite 5
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Vue 3 | 3.3.4 | 渐进式前端框架（Composition API + `<script setup>`） |
+| Vite | 5.0.8 | 开发服务器与生产构建 |
+| Pinia | 2.1.7 | 状态管理（Composition API 风格） |
+| Vue Router | 4.2.5 | SPA 路由（嵌套路由 + 懒加载） |
+| Element Plus | 2.4.4 | UI 组件库（表格/表单/对话框/选择器等） |
+| ECharts | 6.0.0 | 数据可视化图表（管理员统计页） |
+| Axios | 1.6.2 | HTTP 客户端（JWT 拦截器） |
 
----
+## 快速开始
 
-## 🚀 快速开始
-
-### 安装依赖
 ```bash
 cd frontend-vue
 npm install
+npm run dev        # 开发服务器 → http://localhost:3000
+npm run build      # 生产构建 → dist/
+npm run preview    # 预览生产构建
+npm run lint       # ESLint 代码检查
 ```
 
-### 启动开发服务器
-```bash
-npm run dev
-```
-访问：http://localhost:3000
-
-### 构建生产版本
-```bash
-npm run build
-```
-
-### 预览生产版本
-```bash
-npm run preview
-```
-
----
-
-## 📁 项目结构
+## 项目结构
 
 ```
 frontend-vue/
-├── public/                     # 静态资源
-├── src/
-│   ├── api/                    # API接口封装
-│   │   ├── auth.js            # 认证API
-│   │   ├── user.js            # 用户API
-│   │   ├── team.js            # 团队API
-│   │   ├── submission.js      # 作品API
-│   │   └── review.js          # 评审API
-│   ├── components/             # 通用组件
-│   │   ├── Navbar.vue         # 导航栏组件
-│   │   ├── Sidebar.vue        # 侧边栏组件
-│   │   ├── StatCard.vue       # 统计卡片组件
-│   │   ├── TrackCard.vue      # 赛道卡片组件
-│   │   └── DataTable.vue      # 数据表格组件
-│   ├── router/                 # 路由配置
-│   │   └ index.js             # 路由定义
-│   ├── stores/                 # Pinia状态管理
-│   │   ├── user.js            # 用户状态
-│   │   ├── team.js            # 团队状态
-│   │   └ submission.js        # 作品状态
-│   ├── styles/                 # 全局样式
-│   │   ├── variables.css      # CSS变量
-│   │   ├── global.css         # 全局样式
-│   ├── utils/                  # 工具函数
-│   │   ├── request.js         # axios封装
-│   │   ├── auth.js            # 认证工具
-│   │   └ date.js              # 日期处理
-│   ├── views/                  # 页面组件
-│   │   ├── LoginView.vue      # 登录页面
-│   │   ├── NotFoundView.vue   # 404页面
-│   │   ├── student/           # 学生页面
-│   │   │   ├── HomeView.vue
-│   │   │   ├── TeamView.vue
-│   │   │   ├── WorksView.vue
-│   │   │   └ ResultsView.vue
-│   │   ├── judge/             # 评审员页面
-│   │   │   ├── HomeView.vue
-│   │   │   ├── SubmissionsView.vue
-│   │   │   └ ReviewView.vue
-│   │   ├── admin/             # 管理员页面
-│   │   │   ├── DashboardView.vue
-│   │   │   ├── CompetitionsView.vue
-│   │   │   ├── UsersView.vue
-│   │   │   ├── SubmissionsView.vue
-│   │   │   └ ReviewsView.vue
-│   ├── App.vue                 # 根组件
-│   └ main.js                   # 入口文件
-├── index.html                  # HTML模板
-├── vite.config.js              # Vite配置
-├── package.json                # 项目配置
-└── README.md                   # 本文件
+├── package.json
+├── vite.config.js                  (port 3000, proxy /api → :8080)
+├── index.html
+└── src/
+    ├── main.js                     (入口：挂载 Pinia/Router/ElementPlus/Icons)
+    ├── App.vue                     (根组件：<router-view />)
+    ├── router/index.js             (17条路由 + 全局 beforeEach 守卫)
+    ├── stores/competition.js       (赛事 Store)
+    ├── layouts/
+    │   ├── StudentLayout.vue       (学生端侧边栏布局)
+    │   ├── JudgeLayout.vue         (评委端侧边栏布局)
+    │   └── AdminLayout.vue         (管理员端侧边栏布局)
+    ├── components/
+    │   ├── Sidebar.vue             (统一侧边栏：按角色动态菜单、可折叠、移动端)
+    │   └── SidebarIcons.js         (11个自定义 SVG 图标)
+    ├── utils/
+    │   ├── api.js                  (Axios 实例：JWT注入 + 统一错误处理)
+    │   ├── dateUtils.js            (日期格式化)
+    │   ├── messageUtils.js         (消息提示封装)
+    │   └── attachmentUtils.js      (附件工具 + useWorkAttachments composable)
+    ├── styles/
+    │   ├── professional.css        (核心设计系统)
+    │   ├── buttons.css
+    │   ├── card-sizes.css
+    │   ├── layout.css
+    │   └── main.css
+    └── views/
+        ├── Login.vue               (登录 — 公共)
+        ├── Register.vue            (注册 — 公共)
+        ├── Competitions.vue        (赛事列表 — 公共)
+        ├── Tracks.vue              (赛道详情 — 公共)
+        ├── student/                (学生端 8页)
+        │   ├── Home.vue
+        │   ├── Registration.vue
+        │   ├── Teams.vue           (三级Tab：我的团队/邀请/申请)
+        │   ├── TeamDetail.vue
+        │   ├── Works.vue           (Dashboard风格：AI评分条+进度流)
+        │   ├── Results.vue
+        │   ├── Invitations.vue
+        │   └── Profile.vue
+        ├── judge/                  (评委端 5页)
+        │   ├── Home.vue
+        │   ├── Pending.vue         (卡片网格+评分Dialog)
+        │   ├── Reviewed.vue
+        │   ├── Stats.vue
+        │   └── Profile.vue
+        └── admin/                  (管理员端 7页)
+            ├── Home.vue
+            ├── Competitions.vue    (赛事CRUD+赛道管理)
+            ├── Judges.vue
+            ├── Students.vue
+            ├── Works.vue           (批量/自动分配评委)
+            ├── Reviews.vue         (评审结果+奖项设置)
+            └── Stats.vue           (ECharts可视化)
 ```
 
----
+## 路由架构
 
-## 🎨 页面设计
+- **公共页面**（无需登录）：`/login`、`/register`、`/competitions`、`/competitions/:id/tracks`
+- **学生端**（/student）：Home、Registration、Teams、TeamDetail、Works、Results、Invitations、Profile
+- **评委端**（/judge）：Home、Pending、Reviewed、Stats、Profile
+- **管理员端**（/admin）：Home、Competitions、Judges、Students、Works、Reviews、Stats
 
-### 登录页面 (LoginView.vue)
-- ✅ 左侧品牌展示区（蓝色渐变）
-- ✅ 右侧登录表单
-- ✅ 三种角色选择卡片（学生、评委、管理员）
-- ✅ 表单验证
-- ✅ 密码提示
+路由守卫 `beforeEach`：检查 `meta.requiresAuth` → 验证 token 存在 → 验证 role 匹配 → 放行或重定向 `/login`。
 
-### 学生首页
-- ✅ Hero区域（赛事介绍）
-- ✅ 统计数据卡片（参赛队伍、学生、作品、专家）
-- ✅ 赛道介绍卡片（程序设计、演示文稿、短视频）
-- ✅ 快速操作区域（组建团队、提交作品、查看结果）
+## API 代理
 
-### 评审员首页
-- ✅ 作品列表表格
-- ✅ 筛选和搜索功能
-- ✅ AI初审报告预览
-- ✅ 评分表单
+开发环境通过 Vite proxy 将 `/api` 请求转发到 `http://localhost:8080`。
 
-### 管理员仪表盘
-- ✅ 左侧导航栏
-- ✅ 数据统计面板
-- ✅ 图表展示区
-- ✅ 快速操作入口
+生产环境需在 Nginx 等反向代理中配置同等规则。
+
+## 设计系统
+
+深藏青 + 专业蓝配色方案，衬线标题字体（Cormorant Garamond）+ 无衬线正文字体（IBM Plex Sans）。详见 `src/styles/professional.css`。
+
+## 测试账户
+
+| 角色 | 用户名 | 密码 |
+|------|--------|------|
+| 学生 | student001 | 123456 |
+| 评委 | judge001 | 123456 |
+| 管理员 | admin | 123456 |
 
 ---
 
-## 🔧 开发规范
-
-### 组件命名
-- 页面组件：`xxxView.vue`
-- 通用组件：`XxxComponent.vue`
-- 布局组件：`XxxLayout.vue`
-
-### API封装
-```javascript
-// src/api/auth.js
-import request from '@/utils/request'
-
-export const login = (data) => {
-  return request.post('/api/auth/login', data)
-}
-
-export const logout = () => {
-  return request.post('/api/auth/logout')
-}
-```
-
-### 状态管理
-```javascript
-// src/stores/user.js
-import { defineStore } from 'pinia'
-
-export const useUserStore = defineStore('user', () => {
-  const userInfo = ref({})
-  const setUserInfo = (info) => {
-    userInfo.value = info
-  }
-  return { userInfo, setUserInfo }
-})
-```
-
----
-
-## 📝 待开发功能
-
-### 学生模块
-- [ ] 团队组建页面
-- [ ] 作品提交页面
-- [ ] 作品管理页面
-- [ ] 评审结果页面
-- [ ] 个人中心页面
-
-### 评审员模块
-- [ ] 作品列表页面
-- [ ] 作品详情页面
-- [ ] 评分表单页面
-- [ ] AI报告详情页面
-- [ ] 评审记录页面
-
-### 管理员模块
-- [ ] 用户管理页面
-- [ ] 赛事管理页面
-- [ ] 作品管理页面
-- [ ] 评审管理页面
-- [ ] 数据统计页面
-- [ ] 系统配置页面
-
----
-
-## 🌐 API对接
-
-### 后端API地址
-- 开发环境：http://localhost:8080/api
-- 生产环境：http://your-domain.com/api
-
-### API文档
-参考：`docs/API_DESIGN.md`
-
----
-
-## 💡 开发建议
-
-1. **组件化开发**：拆分复杂页面为多个组件
-2. **状态管理**：使用Pinia管理全局状态
-3. **路由懒加载**：使用动态import优化性能
-4. **样式统一**：使用CSS变量和Element Plus主题
-5. **类型安全**：建议逐步迁移到TypeScript
-
----
-
-**开发时间**: 2026-01-19
 **开发者**: 陈海波
+
 **指导老师**: 贺细平

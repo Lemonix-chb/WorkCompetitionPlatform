@@ -505,16 +505,26 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewResultMapper, ReviewRes
 
         // 批量查询赛道（从作品中提取赛道ID）
         Set<Long> trackIds = works.stream().map(Work::getTrackId).filter(id -> id != null).collect(Collectors.toSet());
-        List<CompetitionTrack> tracks = competitionTrackMapper.selectList(new LambdaQueryWrapper<CompetitionTrack>().in(CompetitionTrack::getId, trackIds));
-        Map<Long, CompetitionTrack> trackMap = tracks.stream().collect(Collectors.toMap(CompetitionTrack::getId, t -> t));
+        Map<Long, CompetitionTrack> trackMap;
+        if (trackIds.isEmpty()) {
+            trackMap = new java.util.HashMap<>();
+        } else {
+            List<CompetitionTrack> tracks = competitionTrackMapper.selectList(new LambdaQueryWrapper<CompetitionTrack>().in(CompetitionTrack::getId, trackIds));
+            trackMap = tracks.stream().collect(Collectors.toMap(CompetitionTrack::getId, t -> t));
+        }
 
         // 批量查询所有评委评审记录
         List<JudgeReview> allJudgeReviews = judgeReviewMapper.selectList(new LambdaQueryWrapper<JudgeReview>().in(JudgeReview::getSubmissionId, submissionIds));
 
         // 批量查询评委用户信息
         Set<Long> judgeIds = allJudgeReviews.stream().map(JudgeReview::getJudgeId).collect(Collectors.toSet());
-        List<User> judges = userMapper.selectList(new LambdaQueryWrapper<User>().in(User::getId, judgeIds));
-        Map<Long, User> judgeMap = judges.stream().collect(Collectors.toMap(User::getId, u -> u));
+        Map<Long, User> judgeMap;
+        if (judgeIds.isEmpty()) {
+            judgeMap = new java.util.HashMap<>();
+        } else {
+            List<User> judges = userMapper.selectList(new LambdaQueryWrapper<User>().in(User::getId, judgeIds));
+            judgeMap = judges.stream().collect(Collectors.toMap(User::getId, u -> u));
+        }
 
         // 按提交ID分组评审记录
         Map<Long, List<JudgeReview>> reviewsBySubmission = allJudgeReviews.stream()

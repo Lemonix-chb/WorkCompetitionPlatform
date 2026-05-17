@@ -419,6 +419,7 @@ const fetchStats = async () => {
   border-left: 4px solid transparent;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .action-card:hover {
@@ -447,6 +448,15 @@ const fetchStats = async () => {
 
 .action-content {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.action-content .card-title,
+.action-content .caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .action-meta {

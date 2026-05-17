@@ -133,14 +133,13 @@
 
           <!-- 三个维度评分 -->
           <div class="score-section">
-            <h4 class="score-section-title mb-md">维度评分（满分25分/维度）</h4>
+            <h4 class="score-section-title mb-md">维度评分（满分100分）</h4>
 
             <el-form-item label="创新性" required>
               <el-slider
                 v-model="reviewForm.innovationScore"
                 :min="0"
-                :max="25"
-                :marks="dimensionMarks"
+                :max="35"
                 show-input
               />
               <span class="score-hint caption">作品的新颖性、独特性和创意程度</span>
@@ -150,8 +149,7 @@
               <el-slider
                 v-model="reviewForm.practicalityScore"
                 :min="0"
-                :max="25"
-                :marks="dimensionMarks"
+                :max="35"
                 show-input
               />
               <span class="score-hint caption">作品的应用价值、解决问题能力</span>
@@ -161,8 +159,7 @@
               <el-slider
                 v-model="reviewForm.userExperienceScore"
                 :min="0"
-                :max="25"
-                :marks="dimensionMarks"
+                :max="30"
                 show-input
               />
               <span class="score-hint caption">作品的易用性、交互设计、视觉呈现</span>
@@ -172,7 +169,7 @@
             <el-form-item label="综合得分">
               <div class="total-score-display">
                 <span class="total-score-value">{{ calculateTotalScore() }}</span>
-                <span class="total-score-unit caption">/75分</span>
+                <span class="total-score-unit caption">/100分</span>
               </div>
             </el-form-item>
           </div>
@@ -299,16 +296,16 @@ const currentAIReport = ref(null) // AI评审报告
 
 const reviewForm = reactive({
   judgeReviewId: null,
-  innovationScore: 20,
-  practicalityScore: 20,
+  innovationScore: 25,
+  practicalityScore: 25,
   userExperienceScore: 20,
   comments: ''
 })
 
 const dimensionMarks = {
   0: '0分',
-  15: '15分',
-  25: '25分'
+  20: '20分',
+  35: '35分'
 }
 
 const scoreMarks = {

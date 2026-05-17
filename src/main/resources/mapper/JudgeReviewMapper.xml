@@ -150,7 +150,7 @@
         FROM submission s
         LEFT JOIN work w ON s.work_id = w.id
         LEFT JOIN team t ON s.team_id = t.id
-        WHERE s.status = 'SUBMITTED'
+        WHERE s.status IN ('VALID', 'SUBMITTED')
           <if test="competitionId != null">
               AND w.competition_id = #{competitionId}
           </if>

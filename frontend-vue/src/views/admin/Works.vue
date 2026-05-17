@@ -650,10 +650,10 @@ const autoAssign = async () => {
     submitting.value = true
     const token = localStorage.getItem('token')
 
-    const params = new URLSearchParams({
-      competitionId: filters.competitionId || '',
-      judgesPerSubmission: '1'
-    })
+    const params = new URLSearchParams({ judgesPerSubmission: '1' })
+    if (filters.competitionId) {
+      params.append('competitionId', filters.competitionId)
+    }
 
     const response = await fetch(`/api/reviews/auto-assign?${params.toString()}`, {
       method: 'POST',
@@ -662,12 +662,16 @@ const autoAssign = async () => {
 
     const data = await response.json()
 
-    ElMessage.success({
-      message: data.data,
-      duration: 5000,
-      showClose: true
-    })
-    await fetchWorks()
+    if (data.code === 200) {
+      ElMessage.success({
+        message: data.data,
+        duration: 5000,
+        showClose: true
+      })
+      await fetchWorks()
+    } else {
+      ElMessage.error(data.message || '自动分配失败')
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('自动分配失败')
