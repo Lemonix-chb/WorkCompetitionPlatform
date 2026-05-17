@@ -161,27 +161,103 @@
       <el-dialog
         v-model="showInviteMemberDialog"
         title="邀请成员"
-        width="480px"
+        width="500px"
       >
-        <el-form :model="inviteForm" label-width="100px">
-          <el-form-item label="用户ID">
-            <el-input
-              v-model="inviteForm.invitedUserId"
-              placeholder="请输入被邀请用户的ID"
-              required
-            />
-          </el-form-item>
-          <el-form-item label="学号">
-            <el-input
-              v-model="inviteForm.invitedStudentNo"
-              placeholder="可选，输入学号查找用户"
-            />
-          </el-form-item>
-        </el-form>
+        <div class="invite-steps">
+          <!-- Step 1: Search Student -->
+          <div class="step-section">
+            <h3 class="section-title mb-md">搜索学生</h3>
+            <div class="search-form flex gap-md mb-lg">
+              <el-input
+                v-model="searchStudentKeyword"
+                placeholder="输入学号或姓名搜索学生"
+                clearable
+                @keyup.enter="searchStudent"
+                @input="onStudentSearchInput"
+              />
+              <button class="action-btn-primary" @click="searchStudent" :disabled="searchingStudent" style="flex:none;padding:10px 20px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                {{ searchingStudent ? '搜索中...' : '搜索' }}
+              </button>
+            </div>
+
+            <!-- Single Result -->
+            <div v-if="foundStudent" class="student-result card card-flat mb-lg">
+              <h4 class="caption mb-md" style="color:var(--color-text-secondary)">搜索结果</h4>
+              <div class="student-info">
+                <div class="student-avatar">
+                  <span class="avatar-text">{{ foundStudent.realName.charAt(0) }}</span>
+                </div>
+                <div class="student-details">
+                  <h4 class="card-title">{{ foundStudent.realName }}</h4>
+                  <div class="student-meta caption">
+                    <span>学号：{{ foundStudent.studentNo }}</span>
+                    <span v-if="foundStudent.major">专业：{{ foundStudent.major }}</span>
+                    <span v-if="foundStudent.college">学院：{{ foundStudent.college }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-lg">
+                <button class="action-btn-primary" @click="selectStudent" style="padding:8px 16px;">
+                  选择此学生
+                </button>
+              </div>
+            </div>
+            <!-- Multiple Results -->
+            <div v-else-if="searchedStudents.length > 0" class="students-list mb-lg">
+              <h4 class="caption mb-md" style="color:var(--color-text-secondary)">搜索结果（{{ searchedStudents.length }} 人）</h4>
+              <div v-for="student in searchedStudents" :key="student.id" class="student-option card card-flat">
+                <div class="student-info">
+                  <div class="student-avatar">
+                    <span class="avatar-text">{{ student.realName.charAt(0) }}</span>
+                  </div>
+                  <div class="student-details">
+                    <h4 class="card-title">{{ student.realName }}</h4>
+                    <div class="student-meta caption">
+                      <span>学号：{{ student.studentNo }}</span>
+                      <span v-if="student.major">专业：{{ student.major }}</span>
+                    </div>
+                  </div>
+                </div>
+                <button class="action-btn-secondary" @click="selectFoundStudent(student)" style="padding:6px 12px;flex:none;">
+                  选择
+                </button>
+              </div>
+            </div>
+            <div v-else-if="searchStudentKeyword && !searchingStudent" class="empty-result caption">
+              未找到学号为 "{{ searchStudentKeyword }}" 的学生
+            </div>
+          </div>
+
+          <!-- Step 2: Confirm Invitation -->
+          <div v-if="selectedStudent" class="step-section">
+            <h3 class="section-title mb-md">确认邀请</h3>
+            <div class="confirmation-box card card-flat">
+              <div class="info-row">
+                <span class="caption" style="color:var(--color-text-secondary)">邀请对象</span>
+                <span class="body-text">{{ selectedStudent.realName }}</span>
+              </div>
+              <div class="info-row">
+                <span class="caption" style="color:var(--color-text-secondary)">学号</span>
+                <span class="body-text">{{ selectedStudent.studentNo }}</span>
+              </div>
+              <div class="info-row">
+                <span class="caption" style="color:var(--color-text-secondary)">加入团队</span>
+                <span class="body-text">{{ team.teamName }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <template #footer>
           <div class="dialog-footer">
-            <el-button @click="showInviteMemberDialog = false">取消</el-button>
-            <el-button type="primary" @click="handleInviteMember" :loading="inviteLoading">
+            <el-button @click="closeInviteDialog">取消</el-button>
+            <el-button
+              type="primary"
+              @click="handleInviteMember"
+              :disabled="!selectedStudent"
+              :loading="inviteLoading"
+            >
               发送邀请
             </el-button>
           </div>
@@ -212,10 +288,11 @@ const isLeader = computed(() => {
 })
 
 const showInviteMemberDialog = ref(false)
-const inviteForm = ref({
-  invitedUserId: '',
-  invitedStudentNo: ''
-})
+const searchStudentKeyword = ref('')
+const searchedStudents = ref([])
+const foundStudent = ref(null)
+const selectedStudent = ref(null)
+const searchingStudent = ref(false)
 const inviteLoading = ref(false)
 
 onMounted(async () => {
@@ -249,29 +326,106 @@ const fetchTeamMembers = async () => {
 }
 
 const showInviteDialog = () => {
+  searchStudentKeyword.value = ''
+  searchedStudents.value = []
+  foundStudent.value = null
+  selectedStudent.value = null
   showInviteMemberDialog.value = true
 }
 
+const closeInviteDialog = () => {
+  showInviteMemberDialog.value = false
+  searchStudentKeyword.value = ''
+  searchedStudents.value = []
+  foundStudent.value = null
+  selectedStudent.value = null
+}
+
+const searchStudent = async () => {
+  if (!searchStudentKeyword.value) {
+    showWarning('请输入学号')
+    return
+  }
+
+  searchingStudent.value = true
+  try {
+    const params = new URLSearchParams({ keyword: searchStudentKeyword.value })
+    const data = await get(`/users/students/search?${params.toString()}`)
+    searchedStudents.value = data || []
+
+    if (searchedStudents.value.length === 1) {
+      foundStudent.value = searchedStudents.value[0]
+      showSuccess(`找到学生: ${foundStudent.value.realName} (${foundStudent.value.studentNo})`)
+    } else if (searchedStudents.value.length > 1) {
+      showSuccess(`找到 ${searchedStudents.value.length} 个匹配的学生`)
+    } else {
+      ElMessage.info('未找到匹配的学生')
+    }
+  } catch (error) {
+    showError('搜索失败')
+  } finally {
+    searchingStudent.value = false
+  }
+}
+
+const selectFoundStudent = (student) => {
+  foundStudent.value = student
+  searchedStudents.value = []
+}
+
+const selectStudent = () => {
+  if (foundStudent.value) {
+    selectedStudent.value = foundStudent.value
+    foundStudent.value = null
+  }
+}
+
+let searchDebounceTimer = null
+const onStudentSearchInput = () => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  if (!searchStudentKeyword.value) {
+    searchedStudents.value = []
+    foundStudent.value = null
+    selectedStudent.value = null
+    return
+  }
+  searchDebounceTimer = setTimeout(async () => {
+    searchingStudent.value = true
+    try {
+      const params = new URLSearchParams({ keyword: searchStudentKeyword.value })
+      const data = await get(`/users/students/search?${params.toString()}`)
+      searchedStudents.value = data || []
+      foundStudent.value = null
+      selectedStudent.value = null
+      if (searchedStudents.value.length === 1) {
+        foundStudent.value = searchedStudents.value[0]
+      }
+    } catch {
+      searchedStudents.value = []
+    } finally {
+      searchingStudent.value = false
+    }
+  }, 300)
+}
+
 const handleInviteMember = async () => {
-  if (!inviteForm.value.invitedUserId) {
-    showWarning('请输入被邀请用户的ID')
+  if (!selectedStudent.value) {
+    showWarning('请先选择要邀请的学生')
     return
   }
 
   inviteLoading.value = true
-
   try {
     const params = new URLSearchParams({
-      invitedUserId: inviteForm.value.invitedUserId
+      inviteeStudentNo: selectedStudent.value.studentNo
     })
-
     await post(`/teams/${teamId}/invite?${params.toString()}`)
 
     showSuccess('邀请已发送')
-    showInviteMemberDialog.value = false
-    inviteForm.value = { invitedUserId: '', invitedStudentNo: '' }
+    closeInviteDialog()
+    await fetchTeamDetail()
   } catch (error) {
-    showError('邀请失败，请检查网络连接')
+    showError('邀请失败')
   } finally {
     inviteLoading.value = false
   }
@@ -555,6 +709,89 @@ const formatDate = (dateStr) => {
     width: 100%;
     justify-content: center;
   }
+}
+
+/* Invite Dialog Styles */
+.invite-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.step-section {
+  padding: var(--spacing-md) 0;
+}
+
+.search-form {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.student-result,
+.student-option {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: 8px;
+}
+
+.student-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.student-info {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.student-avatar {
+  width: 48px;
+  height: 48px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.student-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.student-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  color: var(--color-text-secondary);
+}
+
+.confirmation-box {
+  padding: var(--spacing-lg);
+}
+
+.confirmation-box .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+}
+
+.confirmation-box .info-row + .info-row {
+  border-top: 1px solid var(--color-border-light);
+}
+
+.empty-result {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
 }
 
 /* Apple-style Action Buttons - 与Teams.vue团队卡片按钮保持一致 */

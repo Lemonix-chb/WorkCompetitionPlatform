@@ -306,8 +306,9 @@
               clearable
               style="width: 400px"
               @keyup.enter="searchTeams"
+              @input="onTeamSearchInput"
             />
-            <button class="btn-secondary" @click="searchTeams">
+            <button class="btn-primary" @click="searchTeams" style="flex:none;padding:10px 20px;">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
                 <path d="M10 6V10L13 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -534,11 +535,13 @@
             <div class="search-form flex gap-md mb-lg">
               <el-input
                 v-model="searchStudentKeyword"
-                placeholder="输入学号搜索学生"
+                placeholder="输入学号或姓名搜索学生"
                 clearable
                 @keyup.enter="searchStudent"
+                @input="onStudentSearchInput"
               />
-              <button class="btn-secondary" @click="searchStudent" :loading="searchingStudent">
+              <button class="btn-primary" @click="searchStudent" :loading="searchingStudent" style="flex:none;padding:10px 20px;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                 搜索
               </button>
             </div>
@@ -922,7 +925,7 @@ const closeInviteDialog = () => {
 
 const searchStudent = async () => {
   if (!searchStudentKeyword.value) {
-    showWarning('请输入学号')
+    showWarning('请输入学号或姓名')
     return
   }
 
@@ -935,6 +938,8 @@ const searchStudent = async () => {
 
     const data = await get(`/users/students/search?${params.toString()}`)
     searchedStudents.value = data || []
+    foundStudent.value = null
+    selectedStudent.value = null
 
     // 如果只有一个结果,自动选择
     if (searchedStudents.value.length === 1) {
@@ -950,6 +955,34 @@ const searchStudent = async () => {
   } finally {
     searchingStudent.value = false
   }
+}
+
+let searchDebounceTimer = null
+const onStudentSearchInput = () => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  if (!searchStudentKeyword.value) {
+    searchedStudents.value = []
+    foundStudent.value = null
+    selectedStudent.value = null
+    return
+  }
+  searchDebounceTimer = setTimeout(async () => {
+    searchingStudent.value = true
+    try {
+      const params = new URLSearchParams({ keyword: searchStudentKeyword.value })
+      const data = await get(`/users/students/search?${params.toString()}`)
+      searchedStudents.value = data || []
+      foundStudent.value = null
+      selectedStudent.value = null
+      if (searchedStudents.value.length === 1) {
+        foundStudent.value = searchedStudents.value[0]
+      }
+    } catch {
+      searchedStudents.value = []
+    } finally {
+      searchingStudent.value = false
+    }
+  }, 300)
 }
 
 const selectFoundStudent = (student) => {
@@ -1011,6 +1044,24 @@ const searchTeams = async () => {
   } catch (error) {
     showError('搜索失败')
   }
+}
+
+let teamSearchDebounceTimer = null
+const onTeamSearchInput = () => {
+  if (teamSearchDebounceTimer) clearTimeout(teamSearchDebounceTimer)
+  if (!searchTeamKeyword.value) {
+    searchedTeams.value = []
+    return
+  }
+  teamSearchDebounceTimer = setTimeout(async () => {
+    try {
+      const params = new URLSearchParams({ keyword: searchTeamKeyword.value })
+      const data = await get(`/teams/search?${params.toString()}`)
+      searchedTeams.value = data || []
+    } catch {
+      searchedTeams.value = []
+    }
+  }, 300)
 }
 
 const applyToTeam = async (team) => {

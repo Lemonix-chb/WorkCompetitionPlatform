@@ -68,7 +68,7 @@
         FROM team t
         LEFT JOIN user u ON t.leader_id = u.id
         LEFT JOIN competition_track ct ON t.competition_track_id = ct.id
-        WHERE t.status = 'FORMING'
+        WHERE 1=1
         <if test="keyword != null and keyword != ''">
             AND (
                 t.team_name LIKE CONCAT('%', #{keyword}, '%')
@@ -78,7 +78,7 @@
                 OR ct.track_name LIKE CONCAT('%', #{keyword}, '%')
             )
         </if>
-        ORDER BY t.create_time DESC
+        ORDER BY t.status = 'FORMING' DESC, t.create_time DESC
     </select>
 
 </mapper>
