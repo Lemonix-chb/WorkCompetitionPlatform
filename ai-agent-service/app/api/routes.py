@@ -63,19 +63,19 @@ def _run_review_sync(request: ReviewRequest):
             documentation_score = getattr(result, 'director_skill_score', 0)
 
         report = AIReviewReport(
-            overallScore=result.overall_score,
-            innovationScore=innovation_score,
-            practicalityScore=practicality_score,
-            userExperienceScore=user_experience_score,
-            documentationScore=documentation_score,
-            codeQualityScore=code_quality_score,
-            duplicateRate=duplicate_rate,
-            reviewSummary=result.review_summary,
-            improvementSuggestions=result.improvement_suggestions,
-            strengths=getattr(result, 'strengths', []),
-            weaknesses=getattr(result, 'weaknesses', []),
-            aiModel=result.agent_type,
-            riskLevel='HIGH' if result.overall_score < 60 else ('MEDIUM' if result.overall_score < 75 else 'LOW')
+            overallScore=result.overall_score or 0,
+            innovationScore=innovation_score or 0,
+            practicalityScore=practicality_score or 0,
+            userExperienceScore=user_experience_score or 0,
+            documentationScore=documentation_score or 0,
+            codeQualityScore=code_quality_score or 0,
+            duplicateRate=duplicate_rate or 0,
+            reviewSummary=result.review_summary or "",
+            improvementSuggestions=result.improvement_suggestions or [],
+            strengths=getattr(result, 'strengths', []) or [],
+            weaknesses=getattr(result, 'weaknesses', []) or [],
+            aiModel=result.agent_type or "Unknown",
+            riskLevel='HIGH' if (result.overall_score or 0) < 60 else ('MEDIUM' if (result.overall_score or 0) < 75 else 'LOW')
         )
 
         # Send callback to Spring Boot

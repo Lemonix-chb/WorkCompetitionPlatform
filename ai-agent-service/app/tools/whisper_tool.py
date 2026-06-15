@@ -12,9 +12,6 @@ WhisperTool - 语音转文字和故事性分析工具
 - segments: 分段转录（带时间戳）
 - story_score: 故事性评分（0-25）
 - content_richness: 内容丰富度评级
-
-作者：AI Agent架构重构项目
-创建时间：2026-05-03
 """
 
 import os

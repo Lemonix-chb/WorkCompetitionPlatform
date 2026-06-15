@@ -6,9 +6,6 @@ AgentFactory - Agent工厂
 2. 配置Agent的工具链
 3. 统一Agent初始化流程
 4. 支持Agent依赖注入
-
-作者：AI Agent架构重构项目
-创建时间：2026-05-03
 """
 
 import os

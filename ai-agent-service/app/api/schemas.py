@@ -23,11 +23,11 @@ class AIReviewReport(BaseModel):
     """AI评审报告（回调给Spring Boot）"""
     model_config = ConfigDict(populate_by_name=True)
 
-    overallScore: float = Field(default=80.0, ge=0, le=100, alias="overall_score")
-    innovationScore: float = Field(default=20.0, ge=0, le=25, alias="innovation_score")
-    practicalityScore: float = Field(default=20.0, ge=0, le=25, alias="practicality_score")
-    userExperienceScore: float = Field(default=20.0, ge=0, le=25, alias="user_experience_score")
-    documentationScore: float = Field(default=20.0, ge=0, le=25, alias="documentation_score")
+    overallScore: Optional[float] = Field(default=80.0, ge=0, le=100, alias="overall_score")
+    innovationScore: Optional[float] = Field(default=16.0, ge=0, le=20, alias="innovation_score")
+    practicalityScore: Optional[float] = Field(default=16.0, ge=0, le=20, alias="practicality_score")
+    userExperienceScore: Optional[float] = Field(default=16.0, ge=0, le=20, alias="user_experience_score")
+    documentationScore: Optional[float] = Field(default=16.0, ge=0, le=20, alias="documentation_score")
 
     duplicateRate: Optional[float] = Field(None, description="代码重复率", alias="duplicate_rate")
     codeQualityScore: Optional[float] = Field(None, description="代码质量评分", alias="code_quality_score")

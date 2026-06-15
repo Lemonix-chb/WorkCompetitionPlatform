@@ -58,22 +58,22 @@ class ReviewOutput(BaseModel):
     # 总分
     overall_score: float = Field(description="总体评分（0-100）", ge=0, le=100)
 
-    # PPT作品评分维度（各25分）
-    creativity_score: Optional[float] = Field(default=None, description="创意评分（PPT作品，0-25分）")
-    visual_effect_score: Optional[float] = Field(default=None, description="视觉效果评分（PPT作品，0-25分）")
-    content_presentation_score: Optional[float] = Field(default=None, description="内容呈现评分（PPT作品，0-25分）")
-    originality_score: Optional[float] = Field(default=None, description="原创性评分（PPT作品，0-25分）")
+    # PPT作品评分维度（各20分）
+    creativity_score: Optional[float] = Field(default=None, description="创意评分（PPT作品，0-20分）")
+    visual_effect_score: Optional[float] = Field(default=None, description="视觉效果评分（PPT作品，0-20分）")
+    content_presentation_score: Optional[float] = Field(default=None, description="内容呈现评分（PPT作品，0-20分）")
+    originality_score: Optional[float] = Field(default=None, description="原创性评分（PPT作品，0-20分）")
 
-    # VIDEO作品评分维度（各25分）
-    story_score: Optional[float] = Field(default=None, description="故事性评分（VIDEO作品，0-25分）")
-    director_skill_score: Optional[float] = Field(default=None, description="导演技巧评分（VIDEO作品，0-25分）")
+    # VIDEO作品评分维度（各20分）
+    story_score: Optional[float] = Field(default=None, description="故事性评分（VIDEO作品，0-20分）")
+    director_skill_score: Optional[float] = Field(default=None, description="导演技巧评分（VIDEO作品，0-20分）")
 
-    # CODE作品评分维度（各25分）
-    innovation_score: Optional[float] = Field(default=None, description="创新性评分（CODE作品，0-25分）")
-    practicality_score: Optional[float] = Field(default=None, description="实用性评分（CODE作品，0-25分）")
-    user_experience_score: Optional[float] = Field(default=None, description="用户体验评分（CODE作品，0-25分）")
-    code_quality_score: Optional[float] = Field(default=None, description="代码质量评分（CODE作品，0-25分）")
-    documentation_score: Optional[float] = Field(default=None, description="文档完整性评分（CODE作品，0-25分）")
+    # CODE作品评分维度（各20分）
+    innovation_score: Optional[float] = Field(default=None, description="创新性评分（CODE作品，0-20分）")
+    practicality_score: Optional[float] = Field(default=None, description="实用性评分（CODE作品，0-20分）")
+    user_experience_score: Optional[float] = Field(default=None, description="用户体验评分（CODE作品，0-20分）")
+    code_quality_score: Optional[float] = Field(default=None, description="代码质量评分（CODE作品，0-20分）")
+    documentation_score: Optional[float] = Field(default=None, description="文档完整性评分（CODE作品，0-20分）")
     duplicate_rate: Optional[float] = Field(default=None, description="代码重复率（CODE作品）")
 
     # 评审详情
@@ -671,7 +671,7 @@ class OrchestratorAgent:
             weaknesses=review_result.get("weaknesses", []),
             improvement_suggestions=review_result.get("improvement_suggestions", []),
             metadata=review_result.get("video_metadata", review_result.get("ppt_metadata", review_result.get("code_metadata", {}))),
-            agent_type=final_state.get("agent_type", "Unknown"),
+            agent_type=final_state.get("agent_type") or "Unknown",
             # PPT作品评分字段
             creativity_score=review_result.get("creativity_score"),
             visual_effect_score=review_result.get("visual_effect_score"),

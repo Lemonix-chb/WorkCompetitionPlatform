@@ -4,10 +4,10 @@ PPTReviewerAgent - 演示文稿审核专家
 职责：审核演示文稿作品（PPT_TRACK）
 
 官方评分维度（校教发〔2024〕77号文件）：
-- 创意（内容创意、视觉设计创新）: 0-25分
-- 视觉效果（排版、色彩、图文比例）: 0-25分
-- 内容呈现（逻辑结构、信息密度）: 0-25分
-- 原创性（原创元素使用）: 0-25分
+- 创意（内容创意、视觉设计创新）: 0-20分
+- 视觉效果（排版、色彩、图文比例）: 0-20分
+- 内容呈现（逻辑结构、信息密度）: 0-20分
+- 原创性（原创元素使用）: 0-20分
 
 总分：100分（AI评分 × weight + 评委评分 × weight）
 
@@ -43,12 +43,12 @@ class PPTReviewOutput(BaseModel):
     # 总分（100分）
     overall_score: float = Field(description="总体评分（0-100分）", ge=0, le=100)
 
-    # 官方评分维度（各25分）
-    creativity_score: float = Field(description="创意评分（0-25分）", ge=0, le=25)
-    visual_effect_score: float = Field(description="视觉效果评分（0-25分）", ge=0, le=25)
-    content_presentation_score: float = Field(description="内容呈现评分（0-25分）", ge=0, le=25)
-    originality_score: float = Field(description="原创性评分（0-25分）", ge=0, le=25)
-    documentation_score: float = Field(description="文档完整性评分（0-25分）", ge=0, le=25)
+    # 官方评分维度（各20分，5维度合计100分）
+    creativity_score: float = Field(description="创意评分（0-20分）", ge=0, le=20)
+    visual_effect_score: float = Field(description="视觉效果评分（0-20分）", ge=0, le=20)
+    content_presentation_score: float = Field(description="内容呈现评分（0-20分）", ge=0, le=20)
+    originality_score: float = Field(description="原创性评分（0-20分）", ge=0, le=20)
+    documentation_score: float = Field(description="文档完整性评分（0-20分）", ge=0, le=20)
 
     # 硬性要求合规性
     compliance_check: Dict[str, Any] = Field(description="硬性要求合规性检查结果")
@@ -139,9 +139,10 @@ class PPTReviewerAgent:
         logger.info("步骤2：硬性要求检查...")
         compliance_check = self._check_compliance(ppt_metadata, readme_content)
 
-        # ========== 步骤3：PPT质量分析（基础版） ==========
+        # ========== 步骤3：PPT质量分析（增强版） ==========
         logger.info("步骤3：PPT质量分析...")
-        visual_effect_score = self._analyze_ppt_quality(ppt_metadata)
+        ppt_quality_evidence = self._analyze_ppt_quality(ppt_metadata)
+        visual_effect_score = ppt_quality_evidence.get("visual_score_hint", 8)
 
         # ========== 步骤4：DeepSeek LLM评审推理 ==========
         logger.info("步骤4：DeepSeek LLM评审推理...")
@@ -152,7 +153,8 @@ class PPTReviewerAgent:
             compliance_check=compliance_check,
             work_description=work_description,
             readme_content=readme_content,
-            visual_effect_score=visual_effect_score
+            visual_effect_score=visual_effect_score,
+            ppt_quality_evidence=ppt_quality_evidence,
         )
 
         # 调用LLM
@@ -383,63 +385,197 @@ class PPTReviewerAgent:
 
         return compliance
 
-    def _analyze_ppt_quality(self, ppt_metadata: Dict[str, Any]) -> float:
+    def _analyze_ppt_quality(self, ppt_metadata: Dict[str, Any]) -> Dict[str, Any]:
         """
-        分析PPT质量（基础版，评分0-25）
+        分析PPT质量（增强版），返回结构化分析结果
 
         Args:
             ppt_metadata: PPT元数据
 
         Returns:
-            float: PPT质量评分
+            dict: PPT质量分析结果（含各维度指标和建议分数参考）
         """
-        # 基础分：PPT存在（10分）
-        base_score = 10 if ppt_metadata["file_size"] > 0 else 0
+        evidence = {
+            "slide_count": ppt_metadata.get("slide_count", 0),
+            "has_chart": False,
+            "avg_text_per_slide": 0,
+            "text_density_level": "未知",
+            "image_slide_count": 0,
+            "image_ratio": 0.0,
+            "has_structure": False,
+            "font_count": 0,
+            "font_consistency": "未知",
+            "visual_score_hint": 8,
+            "content_score_hint": 8,
+        }
 
-        # 幻灯片数量加分（最多5分）
-        slide_score = min(ppt_metadata["slide_count"] / 20 * 5, 5)
+        try:
+            from pptx import Presentation
 
-        # 文件大小加分（最多5分）
-        file_size_mb = ppt_metadata["file_size"] / (1024 * 1024)
-        size_score = min(file_size_mb / 50 * 5, 5)
+            ppt_path = ppt_metadata.get("ppt_path", "")
+            if not os.path.exists(ppt_path):
+                return evidence
 
-        # 格式加分（PPTX格式5分）
-        format_score = 5 if ppt_metadata["format"] == "PPTX" else 0
+            prs = Presentation(ppt_path)
+            slides = prs.slides
+            total_text_chars = 0
+            text_slides = 0
+            image_slides = 0
+            chart_count = 0
+            fonts = set()
+            has_toc = False
 
-        return round(base_score + slide_score + size_score + format_score, 2)
+            for slide in slides:
+                slide_text_len = 0
+                has_image = False
+
+                for shape in slide.shapes:
+                    # 文本统计
+                    if hasattr(shape, "text") and shape.text.strip():
+                        slide_text_len += len(shape.text.strip())
+
+                    # 图片检测
+                    if shape.shape_type == 13:  # MSO_SHAPE_TYPE.PICTURE
+                        has_image = True
+
+                    # 图表检测
+                    if shape.has_chart:
+                        chart_count += 1
+
+                    # 字体收集
+                    if shape.has_text_frame:
+                        for para in shape.text_frame.paragraphs:
+                            for run in para.runs:
+                                if run.font.name:
+                                    fonts.add(run.font.name)
+
+                total_text_chars += slide_text_len
+                if slide_text_len > 0:
+                    text_slides += 1
+                if has_image:
+                    image_slides += 1
+
+                # 目录页检测（简单启发式：标题含"目录"/"contents"/"大纲"）
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        text_lower = shape.text.strip().lower()
+                        if any(kw in text_lower for kw in ["目录", "contents", "大纲", "提纲", "概览"]):
+                            if len(text_lower) < 30:
+                                has_toc = True
+
+            slide_count = len(slides)
+
+            # 图文比
+            evidence["image_slide_count"] = image_slides
+            if slide_count > 0:
+                evidence["image_ratio"] = round(image_slides / slide_count, 2)
+
+            # 平均每页文字量
+            if text_slides > 0:
+                evidence["avg_text_per_slide"] = round(total_text_chars / text_slides)
+
+            # 文字密度等级
+            avg = evidence["avg_text_per_slide"]
+            if avg > 300:
+                evidence["text_density_level"] = "偏高（文字较多）"
+            elif avg > 100:
+                evidence["text_density_level"] = "适中"
+            elif avg > 0:
+                evidence["text_density_level"] = "偏低（文字较少）"
+            else:
+                evidence["text_density_level"] = "无文字"
+
+            # 图表
+            evidence["has_chart"] = chart_count > 0
+
+            # 结构
+            evidence["has_structure"] = has_toc or slide_count >= 15
+
+            # 字体一致性
+            evidence["font_count"] = len(fonts)
+            if len(fonts) <= 2:
+                evidence["font_consistency"] = "统一"
+            elif len(fonts) <= 4:
+                evidence["font_consistency"] = "基本统一"
+            else:
+                evidence["font_consistency"] = "较杂乱"
+
+            # 视觉效果建议分数
+            vis_score = 6
+            if 0.3 <= evidence["image_ratio"] <= 0.8:
+                vis_score += 3
+            elif evidence["image_ratio"] > 0:
+                vis_score += 1
+            if evidence["has_chart"]:
+                vis_score += 2
+            if evidence["font_consistency"] == "统一":
+                vis_score += 2
+            elif evidence["font_consistency"] == "基本统一":
+                vis_score += 1
+            if slide_count >= 12:
+                vis_score += 2
+            evidence["visual_score_hint"] = min(vis_score, 20)
+
+            # 内容呈现建议分数
+            content_score = 6
+            if evidence["text_density_level"] == "适中":
+                content_score += 4
+            elif evidence["text_density_level"] in ("偏高（文字较多）", "偏低（文字较少）"):
+                content_score += 2
+            if evidence["has_structure"]:
+                content_score += 3
+            if slide_count >= 15:
+                content_score += 2
+            elif slide_count >= 12:
+                content_score += 1
+            if evidence["avg_text_per_slide"] > 0:
+                content_score += 2
+            evidence["content_score_hint"] = min(content_score, 20)
+
+        except ImportError:
+            logger.warning("python-pptx未安装，跳过增强质量分析")
+        except Exception as e:
+            logger.warning(f"PPT增强质量分析失败：{e}")
+
+        return evidence
 
     def _get_system_prompt(self) -> str:
-        """系统提示词：定义PPT评审角色和标准"""
-        return """你是一位专业的演示文稿评审专家，负责审核大学生计算机设计大赛的演示文稿作品。
+        """系统提示词：定义PPT评审角色和标准（非计算机专业友好版）"""
+        return """你是一位经验丰富的演示文稿评审专家，负责评审非计算机专业大学生的演示文稿作品。
 
-评审标准（根据校教发〔2024〕77号文件）：
+重要背景：参赛者为非计算机专业学生，设计经验和技能参差不齐。请以鼓励性评价为主，在指出不足的同时肯定其努力和亮点。评分应体现公平性，不应以专业设计师的标准要求参赛者。
 
-【评分维度】（每个维度0-25分，总分100分）：
-1. 创意（25分）：
-   - 内容创意（主题新颖度、观点独特性）
-   - 视觉设计创新（版式创新、配色创新）
-   - 动画效果创新（过渡动画、交互效果）
+【评分维度】（5个维度各20分，总分100分）：
 
-2. 视觉效果（25分）：
-   - 排版质量（布局合理性、层次清晰度）
-   - 色彩搭配（色彩协调性、视觉美感）
-   - 图文比例（图片与文字平衡、信息密度）
+1. 创意性（0-20分）：
+   16-20分：主题角度新颖独特，切入方式令人印象深刻；页面设计有创意（独特的配色方案、布局或动画效果）；内容呈现方式有巧思（如用故事线串联、互动环节等）
+   11-15分：主题明确有一定新意；页面设计有用心之处；使用了动画或过渡效果增加表现力
+   6-10分：主题常见但表述清楚；页面设计中规中矩
+   0-5分：主题模糊，缺乏创意
 
-3. 内容呈现（25分）：
-   - 逻辑结构（章节划分、内容连贯性、论证完整性）
-   - 信息密度（每页信息量适中、重点突出）
-   - 内容深度（学术价值、技术深度、知识覆盖）
-   - 文字质量（语言表达、错别字检查、专业术语准确性）
+2. 视觉效果（0-20分）：
+   16-20分：整体风格统一美观；图文搭配合理，信息密度适中；配色协调，有层次感；使用了合适的图表/图片增强表达
+   11-15分：整体较为整洁；有基本的图文搭配；配色基本协调，页面布局有一定逻辑
+   6-10分：能看出排版意图但不够精细；图文比例失调或配色不协调
+   0-5分：排版混乱，文字堆砌，无视觉设计
 
-4. 原创性（25分）：
-   - 原创元素（原创图片、原创图表、原创动画）
-   - 内容原创（观点原创、数据原创）
-   - 设计原创（模板原创、配色原创）
+3. 内容呈现（0-20分）：
+   16-20分：逻辑清晰完整（有开头-主体-结论结构）；信息密度适中，重点突出；文字表达准确流畅；内容有深度，有数据或案例支撑
+   11-15分：有基本逻辑结构；内容较为充实但部分页面信息过多或过少；文字表达基本通顺
+   6-10分：结构不够清晰；内容较为单薄或文字过多；有少量错别字或表述不当
+   0-5分：内容混乱，无逻辑可言；大量错别字或语病
 
-5. 文档完整性（25分）：
-   - 说明文档是否存在（README、docx、pdf、txt均可）
-   - 文档内容质量（是否清晰描述作品主题、设计思路、演示逻辑）
-   - 技术说明完整性（是否有设计说明、素材来源说明等）
+4. 原创性（0-20分）：
+   16-20分：内容为原创，有独特的观点或数据；设计风格独特，非直接使用网络模板；包含自制的图表、图片或素材
+   11-15分：主体内容为原创，部分素材来自网络但已注明来源；在模板基础上做了明显的个性化修改
+   6-10分：内容基本原创但设计依赖模板；素材来源标注不完整
+   0-5分：内容大量复制，未注明来源；直接使用未修改的网络模板
+
+5. 文档完整性（0-20分）：
+   16-20分：有完整README（项目介绍、设计思路、演示逻辑）；有设计说明和素材来源说明；文档内容详实、格式规范
+   11-15分：有README但内容不够详实；有部分设计说明；文档基本覆盖主题但缺少细节
+   6-10分：仅有简单的README或说明；文档内容简短，缺少关键信息
+   0-5分：无任何说明文档，或文档内容与作品严重不符
 
 【硬性要求检查】：
 - 页数：至少12页
@@ -449,20 +585,21 @@ class PPTReviewerAgent:
 - 内容健康积极
 
 评审原则：
-1. 严格遵循评分标准，客观公正
-2. 硬性要求不合规项需在评审意见中明确指出
-3. 既肯定作品亮点，也指出不足之处
-4. 提供具体、可操作的改进建议
+1. 参赛者为非计算机专业学生，请以鼓励性评价为主
+2. 在指出不足的同时肯定其努力和亮点
+3. 硬性要求不合规项需指出，但语气要温和
+4. 评分应体现公平性，不应以专业设计师的标准要求参赛者
+5. 提供具体、可操作的改进建议
 
 输出格式：
 请严格按照JSON格式输出，包含以下字段：
 {
   "overall_score": 总分（0-100）,
-  "creativity_score": 创意评分（0-25）,
-  "visual_effect_score": 视觉效果评分（0-25）,
-  "content_presentation_score": 内容呈现评分（0-25）,
-  "originality_score": 原创性评分（0-25）,
-  "documentation_score": 文档完整性评分（0-25）,
+  "creativity_score": 创意评分（0-20）,
+  "visual_effect_score": 视觉效果评分（0-20）,
+  "content_presentation_score": 内容呈现评分（0-20）,
+  "originality_score": 原创性评分（0-20）,
+  "documentation_score": 文档完整性评分（0-20）,
   "review_summary": "评审总结（200-500字）",
   "strengths": ["亮点1", "亮点2", ...],
   "weaknesses": ["不足1", "不足2", ...],
@@ -475,7 +612,8 @@ class PPTReviewerAgent:
         compliance_check: Dict[str, Any],
         work_description: str,
         readme_content: Optional[str],
-        visual_effect_score: float
+        visual_effect_score: float,
+        ppt_quality_evidence: Optional[Dict] = None,
     ) -> str:
         """构建PPT评审提示词（包含提取的文本内容）"""
 
@@ -490,11 +628,33 @@ class PPTReviewerAgent:
                 if slide['title']:
                     ppt_content_summary += f"标题：{slide['title']}\n"
                 if slide['content']:
-                    # 合并内容，限制长度
-                    content_text = "\n".join(slide['content'][:3])  # 只取前3段
+                    content_text = "\n".join(slide['content'][:3])
                     if len(content_text) > 200:
                         content_text = content_text[:200] + "..."
                     ppt_content_summary += f"内容：{content_text}\n"
+
+        # 构建静态分析报告
+        analysis_section = ""
+        if ppt_quality_evidence:
+            analysis_section = f"""
+【静态分析参考】（系统自动检测，仅供参考）：
+
+--- 视觉效果指标 ---
+- 幻灯片数量：{ppt_quality_evidence.get('slide_count', 0)}页
+- 有图片的页面比例：{ppt_quality_evidence.get('image_ratio', 0):.0%}
+- 是否包含图表：{'是' if ppt_quality_evidence.get('has_chart') else '否'}
+- 字体数量：{ppt_quality_evidence.get('font_count', 0)}种
+- 字体一致性：{ppt_quality_evidence.get('font_consistency', '未知')}
+- 建议分数参考：{ppt_quality_evidence.get('visual_score_hint', 8)}/20
+
+--- 内容呈现指标 ---
+- 平均每页文字量：{ppt_quality_evidence.get('avg_text_per_slide', 0)}字
+- 文字密度：{ppt_quality_evidence.get('text_density_level', '未知')}
+- 是否有结构（目录等）：{'有' if ppt_quality_evidence.get('has_structure') else '未检测到'}
+- 建议分数参考：{ppt_quality_evidence.get('content_score_hint', 8)}/20
+
+说明：以上"建议分数参考"是系统基于静态分析计算的参考值。请以实际PPT内容为主要依据进行评分。如果你的判断与参考值偏差较大（>5分），请在评审意见中说明原因。
+"""
 
         prompt = f"""请评审以下演示文稿作品：
 
@@ -517,23 +677,14 @@ class PPTReviewerAgent:
 - 密码保护：{'✓合规' if compliance_check['password_valid'] else '✗不合规'}（{compliance_check['password_message']}）
 - 文件大小：{'✓合规' if compliance_check['size_valid'] else '✗不合规'}（{compliance_check['size_message']}）
 - 说明文档：{'✓合规' if compliance_check['readme_exists'] else '✗不合规'}（{compliance_check['readme_message']}）
-
-【视觉效果初步评分】：{visual_effect_score}/25分（基于幻灯片数量、文件大小等）
-
+{analysis_section}
 【作品说明】：
 {work_description}
 
 【README文档】：
 {readme_content if readme_content else '未提供README文档'}
 
-【评审要求】：
-请根据评审标准，对演示文稿作品进行全面评价。特别关注以下方面：
-1. **内容深度分析**：分析PPT讲述的主题、技术点、创新观点的学术价值和技术深度
-2. **逻辑性评估**：评估内容章节划分是否合理、论证是否完整、知识点是否连贯
-3. **实用价值**：判断PPT内容是否具有实际应用价值、是否能解决实际问题
-4. **创新性评价**：识别内容中的创新观点、独特见解、新颖方法
-
-请以JSON格式输出评审结果。"""
+请根据评审标准，对演示文稿作品进行全面评价。注意参赛者为非计算机专业学生，请以鼓励为主，肯定其努力和亮点。请以JSON格式输出评审结果。"""
 
         return prompt
 
@@ -551,11 +702,11 @@ class PPTReviewerAgent:
             # 构建PPTReviewOutput对象
             review_output = PPTReviewOutput(
                 overall_score=result_dict.get("overall_score", visual_effect_score + 50),
-                creativity_score=result_dict.get("creativity_score", 15),
+                creativity_score=result_dict.get("creativity_score", 12),
                 visual_effect_score=result_dict.get("visual_effect_score", visual_effect_score),
-                content_presentation_score=result_dict.get("content_presentation_score", 15),
-                originality_score=result_dict.get("originality_score", 15),
-                documentation_score=result_dict.get("documentation_score", 10),
+                content_presentation_score=result_dict.get("content_presentation_score", 12),
+                originality_score=result_dict.get("originality_score", 12),
+                documentation_score=result_dict.get("documentation_score", 8),
                 compliance_check=compliance_check,
                 review_summary=result_dict.get("review_summary", ""),
                 strengths=result_dict.get("strengths", []),
@@ -572,11 +723,11 @@ class PPTReviewerAgent:
             # 返回默认结果
             return PPTReviewOutput(
                 overall_score=visual_effect_score + 50,
-                creativity_score=15,
+                creativity_score=12,
                 visual_effect_score=visual_effect_score,
-                content_presentation_score=15,
-                originality_score=15,
-                documentation_score=10,
+                content_presentation_score=12,
+                originality_score=12,
+                documentation_score=8,
                 compliance_check=compliance_check,
                 review_summary="评审结果解析失败",
                 strengths=["评审解析失败"],

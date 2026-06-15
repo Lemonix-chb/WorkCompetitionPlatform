@@ -12,9 +12,6 @@ OCRTool - 字幕识别和主创信息检测工具
 - subtitles: 提取的字幕文本列表
 - creator_info_found: 是否检测到主创信息署名
 - subtitle_quality_score: 字幕质量评分（0-25）
-
-作者：AI Agent架构重构项目
-创建时间：2026-05-03
 """
 
 import os

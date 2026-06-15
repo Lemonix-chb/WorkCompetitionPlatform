@@ -12,9 +12,6 @@ SkillRegistry - 动态技能扩展系统
 - SkillRegistry：技能注册中心
 - SkillLoader：动态加载器
 - AgentFactory：Agent工厂（根据Skill创建Agent）
-
-作者：AI Agent架构重构项目
-创建时间：2026-05-03
 """
 
 import os
